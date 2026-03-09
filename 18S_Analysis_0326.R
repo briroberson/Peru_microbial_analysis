@@ -119,8 +119,8 @@ tax_table(dup_phy)<- as.matrix(taxa_data) #put it back into the phyloseq
 
 ### 2c. Filter out singletons 
 pruned_filtered_phy<-prune_taxa(taxa_sums(dup_phy)>1, dup_phy) #this is similar to subset but it keeps only the taxa that had more than 1 occurence using the taxa sums function
-filtered_phy
-pruned_filtered_phy
+#filtered_phy
+#pruned_filtered_phy
 #print to compare, removed some taxa
 
 ### 2d. Filter out latrines that were switched AND the pos and neg controls
@@ -128,8 +128,8 @@ pruned_filtered_phy
 #    !latrine_trt_month %in% c("L83_latrine_wet", 'L83_control_wet', "L94_latrine_wet", 'L94_control_wet', "L62_control_wet", 'L62_latrine_wet') #the ! means not, so we are removing those latrines
 #                                    !is.na(latrine)) #this removes NAs (the pos and neg controls)
 #print the two to compare
-pruned_filtered_phy
-final_filtered_phy
+#pruned_filtered_phy
+#final_filtered_phy
 
 ####### CURRENT filtering
 
@@ -142,8 +142,8 @@ pruned_filtered_phy <- subset_taxa(pruned_filtered_phy, !is.na(Kingdom))
 #filter out archea and bacteria, plus mitochondria and plastids 
 pruned_filtered_phy <- subset_taxa(pruned_filtered_phy, !(Kingdom %in% c("Archaea", "Bacteria", "Eukaryota:mito", "Eukaryota:plas")))
 
-#exclude vertebrates (family Craniata) and land plants (family Embryophyceae)
-pruned_filtered_phy <- subset_taxa(pruned_filtered_phy, !(Family %in% c("Craniata", "Embryophyceae")))
+#exclude vertebrates (family Craniata)
+pruned_filtered_phy <- subset_taxa(pruned_filtered_phy, !(Family %in% c("Craniata")))
 
 #remove L62, 83, and 94
 pruned_filtered_phy<-subset_samples(pruned_filtered_phy,  !latrine_trt_month %in% c("L83_latrine_wet", 'L83_control_wet', "L94_latrine_wet", 'L94_control_wet', "L62_control_wet", 'L62_latrine_wet'))
@@ -157,17 +157,18 @@ dup_phy
 tax_df <- as.data.frame(tax_table(pruned_filtered_phy))
 sum(is.na(tax_df$Kingdom)) #should be 0 if NA removed at Kingdom level 
 table(tax_df$Kingdom) #should just be Eukaryota & unassigned
-table(tax_df$Family) #no Craniata & Embryophytaceae
+table(tax_df$Family) #no Craniata 
 
-
+#looks good, save to final object 
+final_filtered_phy<- pruned_filtered_phy
 
 
 
 
 #save it as R file so it can be easily loaded. at this point I recommend continuing
 #through the rarefying step and save the rarefied file instead
-#saveRDS(final_filtered_phy, file="F:\\Research\\18S_Soil\\final_filtered_phy_silva_18s") #use whatever file path for where you want to save it
-#final_filtered_phy<-readRDS("F:\\Research\\18S_Soil\\final_filtered_phy_silva_18s")
+saveRDS(final_filtered_phy, file="final_filtered_phy_silva_18s") #use whatever file path for where you want to save it
+final_filtered_phy<-readRDS("final_filtered_phy_silva_18s")
 
 
 ######## 3. Rarefying. if you want to skip to the rarefying and not do all of these steps (3a-3d) 
