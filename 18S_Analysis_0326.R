@@ -199,34 +199,36 @@ sample_names = rownames(otu.matrix) #add sample names
 
 #plot
 otu.rarecurve = rarecurve(otu.matrix, step = 50, label = F, xlim=c(0,15000))
-abline(v=24)
-abline(v=1903)
-abline(v=2075)
-abline(v=5960)
-abline(v=7632)
-abline(v=11195)
-text(x = c(24, 1903, 2075, 5960, 7632, 11195),
+abline(v=2481)
+abline(v=6310)
+abline(v=8548)
+abline(v=12248)
+abline(v=12987)
+abline(v=15981)
+text(x = c(2481, 6310, 8548, 12248, 12987, 15981),
      y = rep(par("usr")[3] + 0.9 * diff(par("usr")[3:4]), 4),
-     labels = c("24", "1903", "2075", "5960", "7632", "11195"),
+     labels = c("2481", "6310", "8548", "12248", "12987", "15981"),
      srt = 90,
      adj = 1,
      col = "blue")
 
 #we have looked at the curves and now decided which value to use to rarefy
 
-### 3d. Do the rarefying using the chosen value. rngseed sets the seed for us within the function
-filt_rare_phy <- rarefy_even_depth(pruned_filtered_phy, rngseed = 200, sample.size=16962)
+### 3d. Rarefy using the chosen value. rngseed sets the seed for us within the function
+filt_rare_phy <- rarefy_even_depth(pruned_filtered_phy, rngseed = 200, sample.size=12987)
+
+#compare the two phyloseqs just to see and confirm that the expected number of samples were dropped
 final_filtered_phy
 filt_rare_phy
-#compare the two phyloseqs just to see and confirm that the expected number of samples were dropped
+
 
 # Final phyloseq (filtered and rarefied) ----
 #save the data as an R file so it doesn't have to be loaded each time.
 #now when you start R, you can load the metadata and waypoints in step 1a. and skip
 #steps 1b-3e
 
-saveRDS(filt_rare_phy, file="F:\\Research\\18S_Soil\\filt_rare_phy_18s.rds") #use whatever file path for where you want to save it
-filt_rare_phy<-readRDS("F:\\Research\\18S_Soil\\filt_rare_phy_18s.rds")
+saveRDS(filt_rare_phy, file="filt_rare_phy_18s.rds") #use whatever file path for where you want to save it
+filt_rare_phy<-readRDS("filt_rare_phy_18s.rds")
 
 
 # Alpha Diversity ----
