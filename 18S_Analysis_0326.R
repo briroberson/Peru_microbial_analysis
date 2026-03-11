@@ -323,6 +323,7 @@ Anova(m_wet_richNB, type='III')
 emmeans(m_wet_richNB, pairwise~treatment*soilAge)
 
 #use exp to backtransform bc on log scale
+
 #the coefficients work exactly how we'd expect. at low elevations, controls are move diverse but than
 # at higher elevations, latrines are more diverse. I calculated this by doing the math first and then
 # exp() of the final answer. I added treatment and soil age terms as necessary and then for elevation you multiply
