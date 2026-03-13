@@ -44,7 +44,7 @@ library(mirlyn)
 #remotes::install_github("phytomosaic/ecole")
 
 #to install mirlyn
-BiocManager::install("escamero/mirlyn")
+#BiocManager::install("escamero/mirlyn")
 
 
 # Load Metadata ----
@@ -228,6 +228,11 @@ text(x = c(2481, 6310, 8548, 12248, 12987, 15981),
 
 #rarefy data
 mirl_object_100<- mirl(final_filtered_phy, libsize=12987, set.seed=200, trimOTUs=T, replace=F, rep=100)
+
+#identify which samples were dropped
+reads <- sample_sums(final_filtered_phy)
+
+reads[reads < 12987] #these are the dropped samples 
 
 #make an empty object to put the ASV tables in
 mirl_otu_100 <- vector("list", length(mirl_object_100))
