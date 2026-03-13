@@ -17,6 +17,7 @@ library(MASS)
 library(ecole)
 library(ANCOMBC)
 library(emmeans)
+library(mirlyn)
 
 # Install Packages ----
 
@@ -41,6 +42,9 @@ library(emmeans)
 #to install ecole
 #install.packages("remotes")
 #remotes::install_github("phytomosaic/ecole")
+
+#to install mirlyn
+BiocManager::install("escamero/mirlyn")
 
 
 # Load Metadata ----
@@ -105,7 +109,7 @@ unique(taxa_data$Kingdom) #check column names are intact
 tax_table(dup_phy)<- as.matrix(taxa_data) #put it back into the phyloseq
 
 
-### 2b. Filter out mitochondria, chloroplasts, and non eukaryotes from phyloseq object
+### 2b. Filter out mitochondria, chloroplasts, and non eukaryotes from phyloseq object [UPDATED filtering schema below]
 #filtered_phy <- dup_phy %>%
 #  subset_taxa(   #the subset keeps rows only where the following operators are met
 #   Kingdom == "Eukaryota" )
@@ -119,8 +123,8 @@ tax_table(dup_phy)<- as.matrix(taxa_data) #put it back into the phyloseq
 
 ### 2c. Filter out singletons 
 pruned_filtered_phy<-prune_taxa(taxa_sums(dup_phy)>1, dup_phy) #this is similar to subset but it keeps only the taxa that had more than 1 occurence using the taxa sums function
-#filtered_phy
-#pruned_filtered_phy
+dup_phy
+pruned_filtered_phy
 #print to compare, removed some taxa
 
 ### 2d. Filter out latrines that were switched AND the pos and neg controls
@@ -214,8 +218,71 @@ text(x = c(2481, 6310, 8548, 12248, 12987, 15981),
 
 #we have looked at the curves and now decided which value to use to rarefy
 
-### 3d. Rarefy using the chosen value. rngseed sets the seed for us within the function
-filt_rare_phy <- rarefy_even_depth(pruned_filtered_phy, rngseed = 200, sample.size=12987)
+### 3d. Rarefy using the chosen value. rngseed sets the seed for us within the function [OLD method - see new below]
+#filt_rare_phy <- rarefy_even_depth(pruned_filtered_phy, rngseed = 200, sample.size=12987)
+
+
+### 3d-2: Rarefying with mirlyn
+#lib size should be 12987
+#for 100 reps
+
+#rarefy data
+mirl_object_100<- mirl(final_filtered_phy, libsize=12987, set.seed=200, trimOTUs=T, replace=F, rep=100)
+
+#make an empty object to put the ASV tables in
+mirl_otu_100 <- vector("list", length(mirl_object_100))
+
+#extract otu tables from each rarefied phyloseq and add to the empty object above
+for (i in 1:length(mirl_object_100)){
+  colnames(mirl_object_100[[i]]@otu_table) <- paste0(colnames(mirl_object_100[[i]]@otu_table))
+  (mirl_otu_100[[i]] <- mirl_object_100[[i]]@otu_table)
+}
+
+
+
+#make metadata file with the correct samples (remove ones dropped during filtering)
+sample_id<- data.frame(final_filtered_phy@sam_data) 
+sample_id$Samples<- row.names(sample_id)
+sample_id<- sample_id %>% 
+  filter(!Samples %in% c(5, 21, 127))
+
+
+sample_id <- sample_id$Samples
+
+#make empty list for each sample
+average_counts_100 <- vector("list", length(sample_id))
+
+#give how many reps you will do
+rep_100<-1:100
+#make empty list to hold 5 dataframes
+iter_list_100<- vector('list', length(rep_100))
+
+#rewrite loop to select columns from each rep, then average them and put them in new otu table
+for (i in 1:length(sample_id) ){
+  for (j in rep_100){
+    iter_list_100[[j]]<-dplyr::select(as.data.frame(mirl_otu_100[[j]]),i) #this selects each individual iteration's otu table and 
+    iter_list_100[[j]]$ASVname<- row.names(iter_list_100[[j]])
+  }
+  
+  sample_df_100<- reduce(iter_list_100[rep_100], full_join, by='ASVname')
+  sample_df_100[is.na(sample_df_100)]<-0
+  row.names(sample_df_100)<- sample_df_100$ASVname
+  sample_df_100<- sample_df_100[,c(1, 3:(1+length(rep_100)))]
+  sample_average_100 <- data.frame(rowMeans(sample_df_100))
+  colnames(sample_average_100) <- sample_id[[i]]
+  average_counts_100[[i]] <- sample_average_100
+}
+average_count_df_100 <- do.call(cbind, average_counts_100)
+
+write.csv(x=average_count_df_100, file="D:\\Soil\\16S\\100rep_averaged_OTUtable.csv")
+
+
+
+
+
+
+
+
 
 #compare the two phyloseqs just to see and confirm that the expected number of samples were dropped
 final_filtered_phy
@@ -229,6 +296,23 @@ filt_rare_phy
 
 saveRDS(filt_rare_phy, file="filt_rare_phy_18s.rds") #use whatever file path for where you want to save it
 filt_rare_phy<-readRDS("filt_rare_phy_18s.rds")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # Alpha Diversity ----
@@ -357,14 +441,14 @@ lrtest(m_wet_richNB, m_wet_rich_nullI)
 ### Shannon's Diversity ----
 #Wet season Shannon's diversity using reference elevation
 m_wet_shan_div<-lmer(Shannon~treatment*soilAge+elevation_sc*treatment+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
-Anova(m_wet_shan_div, type='III')
 summary(m_wet_shan_div)
+Anova(m_wet_shan_div, type='III')
 emmeans(m_wet_shan_div, pairwise~treatment*soilAge)
 
 #check model assumptions
 qqnorm(residuals(m_wet_shan_div)) #checking normality
 
-#compare AIC to model without elevation
+#compare to model without elevation
 m_wet_shan<-lmer(Shannon~treatment*soilAge+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
 summary(m_wet_shan)
 Anova(m_wet_shan)
@@ -380,8 +464,9 @@ lrtest(m_wet_shan_div, m_wet_shan_nullI)
 ### Inv Simpson's Diversity ----
 #wet season Simpson with reference elevation
 m_wet_simp<-lmer(InvSimpson~treatment*soilAge+elevation_sc*treatment+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
-Anova(m_wet_simp, type='III')
 summary(m_wet_simp)
+Anova(m_wet_simp, type='III')
+
 
 #check model assumptions
 qqnorm(residuals(m_wet_simp)) #checking normality
