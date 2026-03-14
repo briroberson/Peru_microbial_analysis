@@ -231,7 +231,6 @@ mirl_object_100<- mirl(final_filtered_phy, libsize=12987, set.seed=200, trimOTUs
 
 #identify which samples were dropped
 reads <- sample_sums(final_filtered_phy)
-
 reads[reads < 12987] #these are the dropped samples 
 
 #make an empty object to put the ASV tables in
@@ -249,7 +248,7 @@ for (i in 1:length(mirl_object_100)){
 sample_id<- data.frame(final_filtered_phy@sam_data) 
 sample_id$Samples<- row.names(sample_id)
 sample_id<- sample_id %>% 
-  filter(!Samples %in% c(5, 21, 127))
+  filter(!Samples %in% c(2, 9, 144, 148))
 
 
 sample_id <- sample_id$Samples
@@ -265,7 +264,7 @@ iter_list_100<- vector('list', length(rep_100))
 #rewrite loop to select columns from each rep, then average them and put them in new otu table
 for (i in 1:length(sample_id) ){
   for (j in rep_100){
-    iter_list_100[[j]]<-dplyr::select(as.data.frame(mirl_otu_100[[j]]),i) #this selects each individual iteration's otu table and 
+    iter_list_100[[j]]<-dplyr::select(as.data.frame(mirl_otu_100[[j]]),i) #this selects each individual iteration's otu table  
     iter_list_100[[j]]$ASVname<- row.names(iter_list_100[[j]])
   }
   
