@@ -113,10 +113,10 @@ base::print(
 
 
 ### Shannon----
-ggplot(metadata_wetF, aes(treatment, Shannon)) +
+ggplot(metadata_wet, aes(treatment, Shannon)) +
   geom_boxplot(alpha = 0.5, aes(fill=treatment)) +
   geom_point(size = 4, aes(color=elevation), alpha = .7) +
-  labs(x = NULL, y = "Shannon's Diversity", title = "a) 16S Alpha Diversity") +
+  labs(x = NULL, y = "Shannon's Diversity", title = "a) 18S Wet Season Alpha Diversity") +
   scale_fill_manual(values=c('cyan3','purple3'))+
   scale_color_gradient(low='lightgray', high='black')+
   theme_bw() +
