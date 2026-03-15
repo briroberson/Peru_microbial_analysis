@@ -344,10 +344,14 @@ metadata_filt<-metadata %>%
 # #for some reason it added X to the beginning of the sample names so I removed it here:
 #all_richness$`SampleID`<-sub('.', '', all_richness$`SampleID`)
 
-#doesn't like non-integers from rarefaction averaging, so calc richness summing otu columns instead: 
+
+#doesn't like non-integers from rarefaction averaging, so calc richness with vegan specnumber() instead
 otu_mat <- as(otu_table(filt_rare_phy), "matrix") 
-all_richness_counts <- colSums(otu_mat > 0)
-all_richness <- data.frame(SampleID = colnames(otu_mat), Observed = all_richness_counts)
+if(taxa_are_rows(filt_rare_phy)) {otu_mat <- t(otu_mat)} #transpose
+
+richness <- specnumber(otu_mat) #calculate richness
+sample_ids <- sample_names(filt_rare_phy) #grab samp IDs
+all_richness <- data.frame(SampleID = sample_ids, Observed = richness)
 
 # #merge with metadata
 metadata_filt<- metadata_filt %>% 
@@ -362,7 +366,7 @@ metadata_filt<- metadata_filt %>%
   left_join(all_simpson, by='SampleID')
 
 # all Pielou evenness
-overall_S <- sum(rowSums(otu_mat) > 0) #calc total number of ASVs
+overall_S <- sum(colSums(otu_mat) > 0) #calc total number of ASVs
 overall_S
 metadata_filt$Pielou<- metadata_filt$Shannon/ log(overall_S)
 
