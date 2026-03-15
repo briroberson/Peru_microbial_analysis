@@ -683,17 +683,17 @@ sum(tree$tip.label==row.names(taxa))
 #use both_names to look up the original qiime2 asv name
 both_names<- data.frame(original=rownames(taxa))
 #rename asvs in taxa table and add to df
-rownames(taxa)<- paste('ASV', seq(1,24464,1), sep='_')
+rownames(taxa)<- paste('ASV', seq(1,23139,1), sep='_')
 both_names$number<- rownames(taxa)
 #take out asv table and rename that too
 asvfull<- otu_table(filt_rare_rep2)
-rownames(asvfull)<- paste('ASV', seq(1,24464,1), sep='_')
+rownames(asvfull)<- paste('ASV', seq(1,23139,1), sep='_')
 #convert them into matrix to put back into phyloseq
 tax<- tax_table(as.matrix(taxa))
 otu<- otu_table(as.matrix(asvfull), taxa_are_rows = T)
 sample<- sample_data(filt_rare_rep2)
 #rename the tree tips too
-tree$tip.label<- paste('ASV', seq(1,24464,1), sep='_')
+tree$tip.label<- paste('ASV', seq(1,23139,1), sep='_')
 
 #put all this back into phyloseq so ASVs now have a normal number name
 rep2_named_phy<- phyloseq(otu, tax, sample, tree)
@@ -706,8 +706,9 @@ rep2_named_phy<- phyloseq(otu, tax, sample, tree)
 # that is being chosen for the beta diversity stuff. so here, L70 control wet rep 1 was dropped when we 
 # rarefied so if we choose replicate 1, there is no L70 control wet representation in our data so
 #we have to make sure it is chosen
-metadata_wetF<- metadata_factored %>% 
-  filter(`month-collected`=='wet' & replicate==1)
+
+metadata_wetF <- metadata_factored %>% 
+  filter((`month-collected` == 'wet' & replicate == 1))
 
 #filter the phyloseq for only wet samples
 filt_rare_wet2<- subset_samples(rep2_named_phy, `month.collected` %in% ('wet'))
@@ -717,12 +718,15 @@ samp<- sample_data(filt_rare_wet2) #pull out data from phyloseq
 
 metadata_wetF<-metadata_wetF[ order(match(metadata_wetF$`SampleID`, row.names(samp))), ]
 
+#check both match 
+sample_names(filt_rare_wet2)
+metadata_wetF$SampleID
 
 ## NECESSARY Subset for RGM data----
 # 5d. Subset RGM data
 #metadata factored
 metadata_RGMF<- metadata_factored %>% 
-  filter(soilAge=='rgm' & (replicate==1 | `SampleID` %in% c('10','14'))) 
+  filter(soilAge=='rgm' & (replicate==1 | `SampleID` %in% c('10'))) 
 
 #make phyloseq for RGM only
 filt_rare_RGM2<- rep2_named_phy%>% 
@@ -733,7 +737,9 @@ sampR<- sample_data(filt_rare_RGM2) #pull out data from phyloseq
 
 metadata_RGMF<-metadata_RGMF[order(match(metadata_RGMF$`SampleID`, row.names(sampR))), ]
 
-
+#check both match 
+sample_names(filt_rare_RGM2)
+metadata_RGMF$SampleID
 
 ## Wet Subset Permanova ----
 ### 5e. Permanova test with wet season data
