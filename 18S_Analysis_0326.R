@@ -1687,11 +1687,14 @@ wet_permutest <- permutest(wet_betadis, permutations = 999) #test for difference
 wet_permutest
 boxplot(wet_betadis)
 
-adonis2(dist(wet_betadis$distances) ~ metadata_wetF$trt_soilAge)
+#adonis2(dist(wet_betadis$distances) ~ metadata_wetF$trt_soilAge)
 
-#beta dispersion
+#RGM Dry subset: 
 dryRGM_betadis<-betadisper(distance(filt_rare_RGM_dry, method='wunifrac'), group=metaDryRGM$treatment, type='median')
-adonis2(dist(dryRGM_betadis$distances)~metaDryRGM$treatment)
-boxplot(dryRGM_betadis)
 permutest(dryRGM_betadis)
+boxplot(dryRGM_betadis)
+
+#adonis2(dist(dryRGM_betadis$distances)~metaDryRGM$treatment)
+
+
 
