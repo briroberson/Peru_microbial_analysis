@@ -325,7 +325,12 @@ simpscorWrgm<- spscorWrgm[simpWrgm_asv,]
 simperWrgm_taxa<-simperWrgm_taxa[row.names(simpscorWrgm),]
 
 # make a list that contains the lowest taxanomic assignment for each of the top 10
-simpWrgm_plottaxa<- c('Chitinophagaceae','Solirubrobacteraceae','Tychonema_CCAP_1459-11B','Acidimicrobiaceae','Spirosoma','Sphingomonadaceae','Micrococcaceae','Planococcaceae','Tychonema_CCAP_1459-11B','Solirubrobacteraceae')
+simpWrgm_plottaxa<- c('Unassigned','Hypotrichia','Annelida_X
+Annelida_XX','Olpidiales
+Olpidiaceae','Heterotrichea_X
+Blepharismidae','Chelicerata
+Arachnida','Cryomonadida','Unassigned','Cryomonadida
+Rhogostoma-lineage','Chrysophyceae')
 
 
 #add the scores to the metadata
@@ -338,11 +343,11 @@ micro.hullsRGMW<- ddply(metargmW, "treatment", find_hull)
 PCoARGMw<-ggplot(metargmW, aes(axis01, axis02)) +
   geom_polygon(data = micro.hullsRGMW, 
                aes(colour = treatment, fill = treatment), alpha = 0.1, show.legend = F) +
-  #geom_segment(data=simpscorWrgm, aes(x=0, xend=V1, y=0, yend=V2), arrow=arrow())+
+  geom_segment(data=simpscorWrgm, aes(x=0, xend=V1, y=0, yend=V2), arrow=arrow())+
   geom_point(size = 4, aes(color=treatment)) +
- # geom_point(data=simpscorWrgm, aes(x=V1, y=V2), shape=3)+
- # annotate(geom="text", x=simpscorWrgm$V1, y=simpscorWrgm$V2, label=simpWrgm_plottaxa,
-  #         color="black") +
+  geom_point(data=simpscorWrgm, aes(x=V1, y=V2), shape=3)+
+  annotate(geom="text", x=simpscorWrgm$V1, y=simpscorWrgm$V2, label=simpWrgm_plottaxa,
+           color="black") +
   scale_color_manual(labels=c('Control', 'Latrine'), values=c('cyan3','purple3'))+
   scale_fill_manual(values=c('cyan3','purple3'))+
   xlab("PCoA 1") +
@@ -385,7 +390,7 @@ simpscorDrgm<- spscorDrgm[simpDrgm_asv,]
 simperDrgm_taxa<-simperDrgm_taxa[row.names(simpscorDrgm),]
 
 # make a list that contains the lowest taxanomic assignment for each of the top 10
-simpDrgm_plottaxa<- c('Solirubrobacteraceae','Chitinophagaceae','Solirubrobacteraceae','Acidimicrobiaceae','Solirubrobacteraceae','Paenarthrobacter','Sphingomonadaceae','Micrococcaceae','Ellin6055','Xanthobacteraceae')
+simpDrgm_plottaxa<- c('Maxillopoda','Unassigned','Pezizomycotina Eurotiomycetes','Embryophyceae_XX','Unassigned','Unassigned','Unassigned','Arachnida','Dothideomycetes','Embryophyceae_XX')
 
 metaDryRGM$axis01<- vegan::scores(pcoaDrgm)[,1]
 metaDryRGM$axis02<- vegan::scores(pcoaDrgm)[,2]
@@ -398,10 +403,10 @@ PCoArgmD<-ggplot(metaDryRGM, aes(axis01, axis02)) +
   geom_polygon(data = micro.hullsRGMD, 
                aes(colour = treatment, fill = treatment), alpha = 0.1, show.legend = F) +
   geom_point(size = 4, aes(color=treatment)) +
-#  geom_point(data=simpscorDrgm, aes(x=V1, y=V2), shape=3)+
- # geom_segment(data=simpscorDrgm, aes(x=0, xend=V1, y=0, yend=V2), arrow=arrow())+
-  #annotate(geom="text", x=simpscorDrgm$V1, y=simpscorDrgm$V2, label=simpDrgm_plottaxa,
-  #         color="black") +
+ geom_point(data=simpscorDrgm, aes(x=V1, y=V2), shape=3)+
+ geom_segment(data=simpscorDrgm, aes(x=0, xend=V1, y=0, yend=V2), arrow=arrow())+
+annotate(geom="text", x=simpscorDrgm$V1, y=simpscorDrgm$V2, label=simpDrgm_plottaxa,
+         color="black") +
   scale_color_manual(labels=c('Control', 'Latrine'), values=c('cyan3','purple3'))+
   scale_fill_manual(values=c('cyan3','purple3'))+
   xlab("PCoA 1") +

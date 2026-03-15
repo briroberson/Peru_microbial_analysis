@@ -828,7 +828,7 @@ simper_Wrgm
 
 #see the top 10
 s_Wrgm<- summary(simper_Wrgm)
-top10_Wrgm<-head(s_Wrgm$control_latrine, n = 10)
+top10_Wrgm<-head(s_Wrgm$latrine_control, n = 10)
 #if this is null after you run it, change the latrine_control to control_latrine. or
 # view simper_Wrgm and see what the name is at the top of the output
 
@@ -977,7 +977,7 @@ summary(ind_lia, indvalcomp=T)
 ind_Wrgm<- multipatt(tasvWrgm, treatment_Wrgm, func='IndVal.g')
 summary(ind_Wrgm, indvalcomp=T)
 
-#put output into data frame with sig and p value
+#put output into data frame with sign and p value
 output_lia<- data.frame(ind_lia$sign)
 output_Wrgm<- data.frame(ind_Wrgm$sign)
 
@@ -1040,7 +1040,7 @@ unique_ind_taxaC_rgm<- unique(ind_taxaC_Wrgm)
 unique(ind_taxaL_lia[ind_taxaL_lia$ASV %in% ind_taxaL_Wrgm$ASV,8])
 #unique to lia
 unique(ind_taxaL_lia[!ind_taxaL_lia$Family %in% ind_taxaL_Wrgm$Family,5])
-#unique to wet rgm
+#unique to rgm
 unique(ind_taxaL_Wrgm[!ind_taxaL_Wrgm$Family %in% ind_taxaL_lia$Family,5])
 
 #find taxa that are shared between wet rgm and lia controls
@@ -1122,7 +1122,7 @@ unique(ind_taxaL_dry[!ind_taxaL_dry$Family %in% ind_taxaL_Wrgm$Family,5])
 #unique to wet (not in dry, doesn't take into account lia taxa)
 unique(ind_taxaL_Wrgm[!ind_taxaL_Wrgm$Family %in% ind_taxaL_dry$Family,5])
 
-
+#find taxa that are shared between wet and dry rgm controls 
 unique(ind_taxaC_dry[ind_taxaC_dry$Family %in% ind_taxaC_Wrgm$Family,5])
 #unique to dry
 unique(ind_taxaC_dry[!ind_taxaC_dry$Family %in% ind_taxaC_Wrgm$Family,5])
@@ -1136,9 +1136,10 @@ unique(ind_taxaC_Wrgm[!ind_taxaC_Wrgm$Family %in% ind_taxaC_dry$Family,5])
 # Differential Abundance----
 ## RGM Latrine by season ----
 
-RGM2_phy_ASV<- filt_rare_rep2%>% 
-  subset_samples(soilAge %in% ('rgm')) %>% 
-  subset_samples(replicate %in% (2)) 
+RGM2_phy_ASV<- filt_rare_rep2 %>% 
+  subset_samples(soilAge %in% ('rgm'))
+
+
 
 #order samples
 sampR<- sample_data(RGM2_phy_ASV) #pull out data from phyloseq
@@ -1159,17 +1160,25 @@ samp2<-metadata_RGMF %>%
   filter(treatment=='latrine') %>% 
   group_by(latrine_trt) %>% 
   summarize(freq=n()) %>% 
-  filter(freq == '2') %>% 
+  filter(freq == 2) %>% 
   dplyr::select(latrine_trt) %>% 
   as.list() 
+
+#if this doesn't work because plyr is masking, try: 
+#samp2 <- metadata_RGMF %>%
+#  dplyr::filter(treatment == 'latrine') %>%
+#  dplyr::group_by(latrine_trt) %>%
+#  dplyr::summarize(freq = dplyr::n(), .groups = 'drop') %>%
+#  dplyr::filter(freq == 2) %>%
+#  dplyr::pull(latrine_trt)
 
 summary(samp2)
 #if this doesn't contain anything, rerun: 
 #metadata_RGMF<- metadata_factored %>% 
 #filter(soilAge=='rgm', replicate==2) 
 
-#filter it to keep the latrines that were sampled in both seasons
-rgmL_rep2_phy<- subset_samples(rgmL_rep2_phy, latrine_trt %in% samp2$latrine_trt)
+#filter the phyloseq to keep the latrines that were sampled in both seasons
+rgmL_rep2_phy<- subset_samples(rgmL_rep2_phy, latrine_trt %in% samp2)
 
 #model with just rep 2, no RE
 rgmLSeason_noRE<-ancombc2(data = rgmL_rep2_phy, tax_level = "Genus",
@@ -1189,8 +1198,8 @@ rgmLSeason_noRE<-ancombc2(data = rgmL_rep2_phy, tax_level = "Genus",
 rgmLSeason_prim<-rgmLSeason_noRE$res
 
 #save it as an rds file
-saveRDS(rgmLSeason_prim, file='D:\\Soil\\18S\\rgmLSeasonDA_18S')
-rgmLSeason_prim<- readRDS('D:\\Soil\\18S\\rgmLSeasonDA_18S')
+saveRDS(rgmLSeason_prim, file='rgmLSeasonDA_18S')
+rgmLSeason_prim<- readRDS('rgmLSeasonDA_18S')
 
 #filter for what's significant
 rgmLSeasonSig<-rgmLSeason_prim %>% 
@@ -1228,7 +1237,7 @@ fig_rgmLSeason = rgmLSeason_DAplot %>%
   geom_errorbar(aes(ymin = lfc_month.collectedwet - se_month.collectedwet, ymax = lfc_month.collectedwet + se_month.collectedwet), 
                 width = 0.2, position = position_dodge(0.05), color = "black") + 
   labs(x = NULL, y = "Log fold change", 
-       title = "Log fold changes") + 
+       title = "RGM Wet vs Dry Latrine") + 
   scale_fill_discrete(name = NULL) +
   scale_color_discrete(name = NULL) +
   theme_bw() + 
