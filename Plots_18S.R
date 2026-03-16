@@ -806,9 +806,8 @@ Phy_relabR<-data.frame(Phy_relabR, check.names=F)
 Phy_relabRt<- data.frame((t(Phy_relabR)), check.names=F)
 
 metaDryRGM<- metadata_RGMF %>% 
-  filter(`month-collected`=='dry') %>% 
-  filter(!`SampleID` %in% c('11B', '19B', '23', '49', '7')) #drop duplicate samples 
-  
+  filter(`month-collected`=='dry') # %>% 
+  #filter(!`SampleID` %in% c('11B', '19B', '23', '49', '7')) #drop duplicate samples
 
 
 metaDryRGM$latrine_trt<- factor(metaDryRGM$latrine_trt, levels=rgmDlab)

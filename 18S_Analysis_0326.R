@@ -1287,8 +1287,8 @@ rgmCSeason_noRE<-ancombc2(data = rgmC_rep2_phy, tax_level = "Genus",
 rgmCSeason_prim<-rgmCSeason_noRE$res
 
 #save it as an rds file
-saveRDS(rgmCSeason_prim, file='D:\\Soil\\18S\\rgmCSeasonDA_18S')
-rgmCSeason_prim<- readRDS('D:\\Soil\\18S\\rgmCSeasonDA_18S')
+saveRDS(rgmCSeason_prim, file='rgmCSeasonDA_18S')
+rgmCSeason_prim<- readRDS('rgmCSeasonDA_18S')
 
 #filter for what's significant
 rgmCSeasonSig<-rgmCSeason_prim %>% 
@@ -1316,7 +1316,7 @@ str(RGM2_phy_ASV@sam_data)
 
 rgmW_rep2_phy<- subset_samples(RGM2_phy_ASV, month.collected=='wet')
 
-# test with just rep 2 and no RE
+# test with just one rep and no RE
 rgmWetTreatmentDA<-ancombc2(data = rgmW_rep2_phy, tax_level = "Genus",
                             fix_formula = "treatment", rand_formula = NULL,
                             p_adj_method = "BH", pseudo_sens = TRUE,
@@ -1334,8 +1334,8 @@ rgmWetTreatmentDA<-ancombc2(data = rgmW_rep2_phy, tax_level = "Genus",
 rgmWetT_prim<-rgmWetTreatmentDA$res
 
 #save it as an rds file
-saveRDS(rgmWetT_prim, file='D:\\Soil\\18S\\rgmWetT_prim.rds')
-rgmWetT_prim<-readRDS('D:\\Soil\\18S\\rgmWetT_prim.rds')
+saveRDS(rgmWetT_prim, file='rgmWetT_prim.rds')
+rgmWetT_prim<-readRDS('rgmWetT_prim.rds')
 
 #filter for what's significant
 rgmWetTSig<-rgmWetT_prim %>% 
@@ -1447,8 +1447,8 @@ rgmDryTreatmentDA<-ancombc2(data = rgmD_rep2_phy, tax_level = "Genus",
 rgmDryT_prim<-rgmDryTreatmentDA$res
 
 #save it as an rds file
-saveRDS(rgmDryT_prim, file='D:\\Soil\\18S\\rgmDryT_prim.rds')
-rgmDryT_prim<-readRDS('D:\\Soil\\18S\\rgmDryT_prim.rds')
+saveRDS(rgmDryT_prim, file='rgmDryT_prim.rds')
+rgmDryT_prim<-readRDS('rgmDryT_prim.rds')
 
 #filter for what's significant
 rgmDryTSig<-rgmDryT_prim %>% 
@@ -1512,7 +1512,7 @@ rgmDry_phylumSig<- rgmDry_phylum_prim %>%
 #get the phyloseq with regular asv names
 wet2_phy_ASV<- filt_rare_phy%>% 
   subset_samples(month.collected %in% ('wet')) %>% 
-  subset_samples(replicate %in% (2)) 
+  subset_samples(replicate==1) 
 
 ## make our test variables factors
 wet2_sampdata<- sample_data(wet2_phy_ASV)
@@ -1541,8 +1541,8 @@ soilAgeCDA<-ancombc2(data = soilAgeCDAphy, tax_level = "Genus",
 
 soilAgeC_prim<- soilAgeCDA$res
 
-saveRDS(soilAgeC_prim, file='D:\\Soil\\18S\\soilAgeC_prim.rds')
-soilAgeC_prim<-readRDS('D:\\Soil\\18S\\soilAgeC_prim.rds')
+saveRDS(soilAgeC_prim, file='soilAgeC_prim.rds')
+soilAgeC_prim<-readRDS('soilAgeC_prim.rds')
 
 soilAgeC_sig<- soilAgeC_prim %>% 
   filter(q_soilAgergm<.05 & passed_ss_soilAgergm==T)
