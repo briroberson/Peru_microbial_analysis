@@ -160,8 +160,9 @@ dup_phy
 
 #run some checks to make sure filtering worked correctly 
 tax_df <- as.data.frame(tax_table(pruned_filtered_phy))
-sum(is.na(tax_df$Kingdom)) #should be 0 if NA removed at Kingdom level 
-table(tax_df$Kingdom) #should just be Eukaryota & unassigned
+#sum(is.na(tax_df$Kingdom)) #should be 0 if NA removed at Kingdom level [OLD]
+sum(tax_df$Kingdom == "Unassigned", na.rm = TRUE)
+table(tax_df$Kingdom) #should just be Eukaryota 
 table(tax_df$Family) #no Craniata 
 
 #looks good, save to final object 
@@ -203,16 +204,16 @@ sample_names = rownames(otu.matrix) #add sample names
 
 
 #plot
-otu.rarecurve = rarecurve(otu.matrix, step = 50, label = F, xlim=c(0,15000))
-abline(v=2481)
-abline(v=6310)
-abline(v=8548)
-abline(v=12248)
-abline(v=12987)
-abline(v=15981)
-text(x = c(2481, 6310, 8548, 12248, 12987, 15981),
+otu.rarecurve = vegan:rarecurve(otu.matrix, step = 50, label = F, xlim=c(0,15000))
+abline(v=1939)
+abline(v=5856)
+abline(v=7068)
+abline(v=10578)
+abline(v=11022)
+abline(v=11396)
+text(x = c(1939, 5856, 7068, 10578, 11022, 11396),
      y = rep(par("usr")[3] + 0.9 * diff(par("usr")[3:4]), 4),
-     labels = c("2481", "6310", "8548", "12248", "12987", "15981"),
+     labels = c("1939", "5856", "7068", "10578", "11022", "11396"),
      srt = 90,
      adj = 1,
      col = "blue")
@@ -228,11 +229,11 @@ text(x = c(2481, 6310, 8548, 12248, 12987, 15981),
 #for 100 reps
 
 #rarefy data
-mirl_object_100<- mirl(final_filtered_phy, libsize=12987, set.seed=200, trimOTUs=T, replace=F, rep=100)
+mirl_object_100<- mirl(final_filtered_phy, libsize=11396, set.seed=200, trimOTUs=T, replace=F, rep=100)
 
 #identify which samples were dropped
 reads <- sample_sums(final_filtered_phy)
-reads[reads < 12987] #these are the dropped samples 
+reads[reads < 11396] #these are the dropped samples 
 
 #make an empty object to put the ASV tables in
 mirl_otu_100 <- vector("list", length(mirl_object_100))
@@ -249,7 +250,7 @@ for (i in 1:length(mirl_object_100)){
 sample_id<- data.frame(final_filtered_phy@sam_data) 
 sample_id$Samples<- row.names(sample_id)
 sample_id<- sample_id %>% 
-  filter(!Samples %in% c(2, 9, 144, 148))
+  filter(!Samples %in% c(13, 144, 148, 2, 9))
 
 
 sample_id <- sample_id$Samples
@@ -259,7 +260,7 @@ average_counts_100 <- vector("list", length(sample_id))
 
 #give how many reps you will do
 rep_100<-1:100
-#make empty list to hold 5 dataframes
+#make empty list to hold 100 dataframes
 iter_list_100<- vector('list', length(rep_100))
 
 #rewrite loop to select columns from each rep, then average them and put them in new otu table
@@ -663,7 +664,7 @@ metadata_factored$trt_month<- as.factor(metadata_factored$trt_month)
 metadata_factored$trt_soilAge<- as.factor(metadata_factored$trt_soilAge)
 
 ## filter out rep 2
-filt_rare_rep2 <- subset_samples(filt_rare_phy, replicate==1 |row.names(filt_rare_phy@sam_data) %in% c('10') )
+filt_rare_rep2 <- subset_samples(filt_rare_phy, replicate==1 |row.names(filt_rare_phy@sam_data) %in% c('10', '14') )
 #change to include samples dropped during rarefy
 sample_names(filt_rare_rep2) #check
 
