@@ -141,7 +141,8 @@ pruned_filtered_phy
 pruned_filtered_phy <-subset_samples(pruned_filtered_phy, !is.na(latrine)) 
 
 #filter out NA at the Kingdom level 
-pruned_filtered_phy <- subset_taxa(pruned_filtered_phy, !is.na(Kingdom))
+#pruned_filtered_phy <- subset_taxa(pruned_filtered_phy, !is.na(Kingdom)) [old, there actually aren't any NA!]
+pruned_filtered_phy <- subset_taxa(pruned_filtered_phy, Kingdom != "Unassigned")
 
 #filter out archea and bacteria, plus mitochondria and plastids 
 pruned_filtered_phy <- subset_taxa(pruned_filtered_phy, !(Kingdom %in% c("Archaea", "Bacteria", "Eukaryota:mito", "Eukaryota:plas")))
