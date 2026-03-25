@@ -327,7 +327,104 @@ filt_rare_phy<-readRDS("filt_rare_phy_18s.rds")
 ###### 4. Diversity Analysis 
 
 ## NECESSARY Calculate Diversity ----
-### 4a. Calculate diversity
+### 4a. Calculate diversity for GENUS level test
+# recode all NAs as incertae sedis so they are counted as the same
+taxa_all<- data.frame(tax_table(filt_rare_phy_18s))
+taxa_all$Phylum[is.na(taxa_all$Phylum)] <- "Incertae_Sedis"
+taxa_all$Class[is.na(taxa_all$Class)] <- "Incertae_Sedis"
+taxa_all$Order[is.na(taxa_all$Order)] <- "Incertae_Sedis"
+taxa_all$Family[is.na(taxa_all$Family)] <- "Incertae_Sedis"
+taxa_all$Genus[is.na(taxa_all$Genus)] <- "Incertae_Sedis"
+
+filt_rare_phy_18s@tax_table<-tax_table(as.matrix(taxa_all))
+
+# for now we are calculating diversity for just things IDed to genus
+#this means richness is how many individual genera are in each sample and Shannon
+#diversity is calculated where each individual genus is a "thing"
+
+#filter out incertae sedis for genus level alpha diversity
+taxa_noNA_genus<- taxa_all %>% 
+  filter(Genus != 'Incertae_Sedis')
+phy_noNA_genus<- filt_rare_phy_18s
+phy_noNA_genus@tax_table<- tax_table(as.matrix(taxa_noNA_genus))
+
+#glomerate by genus
+phy_noNA_genus_glom<-tax_glom(phy_noNA_genus, taxrank='Genus', NArm=T)
+
+#view taxa table
+glom_taxa<- data.frame(tax_table(phy_noNA_genus_glom))
+
+#take out asv table to calculate diversity
+glom_asv<- data.frame(otu_table(phy_noNA_genus_glom))
+glom_asv<- data.frame(t(glom_asv), check.names = F)
+
+### All data Shannon
+#calculate shannon's diversity
+shan_div_glom<-data.frame(diversity(glom_asv, index='shannon'))
+
+#rename column to Shannon
+colnames(shan_div_glom)[1]<- 'Shannon'
+
+#make column with sample id to merge with metadata
+shan_div_glom$`SampleID`<- row.names(shan_div_glom)
+
+#for some reason it added X to the beginning of the sample names so I removed it here:
+shan_div_glom$`SampleID`<-sub('.', '', shan_div_glom$`SampleID`)
+
+#merge with the metadata so we can run a model and filter out the stuff already filtered out
+metadata_filt<-metadata %>%
+  left_join(shan_div_glom, by='SampleID') %>%
+  filter(!is.na(Shannon))
+
+#All Richness
+rich_glom<- data.frame(specnumber(glom_asv))
+
+#rename column to Richness
+colnames(rich_glom)[1]<- 'Observed'
+
+#make column with sample id to merge with metadata
+rich_glom$`SampleID`<- row.names(rich_glom)
+
+# #for some reason it added X to the beginning of the sample names so I removed it here:
+rich_glom$`SampleID`<-sub('.', '', rich_glom$`SampleID`)
+
+# #merge with metadata
+metadata_filt<- metadata_filt %>% 
+  left_join(rich_glom, by='SampleID') %>% 
+  filter(!is.na(Observed))
+
+# all inverse simpson
+#calculate shannon's diversity
+invsimp_glom<-data.frame(diversity(glom_asv, index='invsimpson'))
+
+#rename column to Shannon
+colnames(invsimp_glom)[1]<- 'InvSimpson'
+
+#make column with sample id to merge with metadata
+invsimp_glom$`SampleID`<- row.names(invsimp_glom)
+
+#for some reason it added X to the beginning of the sample names so I removed it here:
+invsimp_glom$`SampleID`<-sub('.', '', invsimp_glom$`SampleID`)
+
+metadata_filt<- metadata_filt %>% 
+  left_join(invsimp_glom, by='SampleID')
+
+# all Pielou evenness
+#######CHANGE NUMBER 
+metadata_filt$Pielou<- metadata_filt$Shannon/ log(146)
+
+#add elevation
+#format latrine names
+waypoints$latrineF<-gsub("^.{0,4}", "", waypoints$latrine)
+waypoints$latrine<- paste("L", waypoints$latrineF, sep='') 
+
+#sometimes it makes weird column names so try just highlighting this code and rerunning it
+metadata_filt<- metadata_filt %>% 
+  left_join(waypoints, by='latrine') 
+
+
+## NECESSARY Calculate Diversity ----
+### 4a. Calculate diversity for ASV level test
 # 
 # ### All data shannon
 all_shan_div<-estimate_richness(filt_rare_phy, measures='Shannon')
@@ -337,15 +434,6 @@ all_shan_div$`SampleID`<- row.names(all_shan_div)
 metadata_filt<-metadata %>%
   left_join(all_shan_div, by='SampleID') %>%
   filter(!is.na(Shannon))
-
-# #calculate all richness
-#all_richness<- estimate_richness(filt_rare_phy, measures='Observed')
-# #add sample names
-#all_richness$`SampleID`<- row.names(all_richness)
-# 
-# #for some reason it added X to the beginning of the sample names so I removed it here:
-#all_richness$`SampleID`<-sub('.', '', all_richness$`SampleID`)
-
 
 #doesn't like non-integers from rarefaction averaging, so calc richness with vegan specnumber() instead
 otu_mat <- as(otu_table(filt_rare_phy), "matrix") 
@@ -421,10 +509,10 @@ metadata_wet_RGM <- metadata_wet %>%
 
 ### Richness ----
 #wet season richness using the reference elevation
-m_wet_richNB<- glmer.nb(Observed~treatment*soilAge+elevation_sc*treatment+(1|latrine_trt_month)+(1|latrine), data=metadata_wet, na.action='na.fail')
-summary(m_wet_richNB)
-Anova(m_wet_richNB, type='III')
-emmeans(m_wet_richNB, pairwise~treatment*soilAge)
+m_wet_rich<- glmer(Observed~treatment*soilAge+elevation_sc*treatment+(1|latrine_trt_month)+(1|latrine), data=metadata_wet, na.action='na.fail', family=poisson(link='log'))
+summary(m_wet_rich)
+Anova(m_wet_rich, type='III')
+emmeans(m_wet_rich, pairwise~treatment*soilAge)
 
 #use exp to backtransform bc on log scale
 
@@ -604,20 +692,21 @@ metaDryRGM_both<-metaDryRGM_both %>%
   mutate(elevation_sc=scale(elevation))
 
 #richness
-m_dry_richNB<- glmer.nb(Observed~treatment*elevation_sc+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
-summary(m_dry_richNB)
-Anova(m_dry_richNB, type='III')
+m_dry_rich<- glmer(Observed~treatment*elevation_sc+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both, family=poisson(link='log'))
+summary(m_dry_rich)
+Anova(m_dry_rich, type='III')
 
 #Shannon
 m_dry_shan<- lmer(Shannon~treatment*elevation_sc+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
 summary(m_dry_shan)
 Anova(m_dry_shan)
+qqnorm(residuals(m_dry_shan))
 
 #Inv Simpson
 m_dry_simp<- lmer(InvSimpson~treatment*elevation_sc+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
 summary(m_dry_simp)
 Anova(m_dry_simp)
-
+qqnorm(residuals(m_dry_simp))
 
 ### Pielou evenness ----
 #logit transform Pielou to use a linear model with it
@@ -625,10 +714,6 @@ m_dry_pie<- lmer(logit(Pielou)~treatment*elevation_sc+(1|latrine_trt_month)+(1|l
 summary(m_dry_pie)
 Anova(m_dry_pie, type='III')
 qqnorm(residuals(m_dry_pie))
-
-
-
-
 
 
 
