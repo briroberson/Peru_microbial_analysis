@@ -1557,7 +1557,7 @@ rgmD_rep2_phy<- subset_samples(RGM2_phy_ASV, month.collected=='dry')
 # test with just rep 2 and no RE
 rgmDryTreatmentDA<-ancombc2(data = rgmD_rep2_phy, tax_level = "Genus",
                             fix_formula = "treatment", rand_formula = NULL,
-                            p_adj_method = "BH", pseudo_sens = TRUE,
+                            p_adj_method = "holm", pseudo_sens = TRUE,
                             prv_cut = 0.10, lib_cut = 0, s0_perc = 0.05,
                             group = "treatment", struc_zero = TRUE, neg_lb = TRUE,
                             alpha = 0.05, n_cl = 2, verbose = TRUE,
@@ -2135,7 +2135,7 @@ rgmD_rep2_phy<- subset_samples(RGM2_phy_ASV, month.collected=='dry')
 # test with just rep 2 and no RE
 rgmDryTreatmentDA<-ancombc2(data = rgmD_rep2_phy, tax_level = "Genus",
                             fix_formula = "treatment", rand_formula = NULL,
-                            p_adj_method = "holm", pseudo_sens = TRUE,
+                            p_adj_method = "BH", pseudo_sens = TRUE,
                             prv_cut = 0.10, lib_cut = 0, s0_perc = 0.05,
                             group = "treatment", struc_zero = TRUE, neg_lb = TRUE,
                             alpha = 0.05, n_cl = 2, verbose = TRUE,
