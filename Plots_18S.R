@@ -145,16 +145,13 @@ wetrich
 #export the plot to a powerpoint to edit
 fig_dml<- rvg::dml(ggobj = wetrich)
 
-officer::read_pptx() %>%
+pres<-officer::read_pptx("F:\\Research\\github\\Peru_microbial_analysis_18s\\18s_Plots.pptx") %>%
   # add slide 
 officer::add_slide() %>%
   # specify object and location of object 
-officer::ph_with(fig_dml, ph_location()) %>%
-  # export slide 
-base::print(
-  target = "F:\\Research\\github\\Peru_microbial_analysis_18s\\18s_Plots.pptx")
+officer::ph_with(fig_dml, ph_location())
 
-
+print(pres, target="F:\\Research\\github\\Peru_microbial_analysis_18s\\18s_Plots.pptx")
 
 
 
@@ -311,11 +308,12 @@ wetbeta
 #export the plot to a powerpoint to edit
 fig_dml<- rvg::dml(ggobj = wetbeta)
 
-pres<-officer::read_pptx() %>%
+pres<-officer::read_pptx("F:\\Research\\github\\Peru_microbial_analysis_18s\\18s_Plots.pptx") %>%
   # add slide 
   officer::add_slide() %>%
   # specify object and location of object 
   officer::ph_with(fig_dml, ph_location())
+
 print(pres, target="F:\\Research\\github\\Peru_microbial_analysis_18s\\18s_Plots.pptx")
 
 #the geom_segment code is used to add arrows to the plot. currently, it is plotting all
