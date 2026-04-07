@@ -508,6 +508,7 @@ metadata_wet_LIA <- metadata_wet %>%
 metadata_wet_RGM <- metadata_wet %>%
   filter(soilAge == "rgm")
 
+
 ### Richness ----
 #wet season richness using the reference elevation
 m_wet_rich<- lmer(Observed~treatment*soilAge+elevation_sc*treatment+(1|latrine_trt_month)+(1|latrine), data=metadata_wet, na.action='na.fail')
