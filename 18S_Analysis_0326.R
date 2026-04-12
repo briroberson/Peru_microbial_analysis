@@ -579,7 +579,7 @@ lrtest(m_wet_shan_div, m_wet_shan_nullI)
 m_wet_simp<-lmer(InvSimpson~treatment*soilAge+elevation_sc*treatment+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
 summary(m_wet_simp)
 Anova(m_wet_simp, type='III')
-
+emmeans(m_wet_simp, pairwise~treatment*soilAge)
 
 #check model assumptions
 qqnorm(residuals(m_wet_simp)) #checking normality
@@ -599,7 +599,7 @@ m_wet_pie<- lmer(logit(Pielou)~treatment*soilAge+elevation_sc*treatment+(1|latri
 summary(m_wet_pie)
 Anova(m_wet_pie, type='III')
 qqnorm(residuals(m_wet_pie))
-
+emmeans(m_wet_pie, pairwise~treatment*soilAge)
 
 
 
@@ -698,6 +698,7 @@ metaDryRGM_both<-metaDryRGM_both %>%
 m_dry_rich<- lmer(Observed~treatment*elevation_sc+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
 summary(m_dry_rich)
 Anova(m_dry_rich, type='III')
+qqnorm(residuals(m_dry_rich))
 
 #Shannon
 m_dry_shan<- lmer(Shannon~treatment*elevation_sc+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
@@ -711,7 +712,7 @@ summary(m_dry_simp)
 Anova(m_dry_simp)
 qqnorm(residuals(m_dry_simp))
 
-### Pielou evenness ----
+# Pielou evenness 
 #logit transform Pielou to use a linear model with it
 m_dry_pie<- lmer(logit(Pielou)~treatment*elevation_sc+(1|latrine_trt_month)+(1|latrine), data = metaDryRGM_both)
 summary(m_dry_pie)
@@ -795,17 +796,17 @@ sum(tree$tip.label==row.names(taxa))
 #use both_names to look up the original qiime2 asv name
 both_names<- data.frame(original=rownames(taxa))
 #rename asvs in taxa table and add to df
-rownames(taxa)<- paste('ASV', seq(1,17901,1), sep='_')
+rownames(taxa)<- paste('ASV', seq(1,21724,1), sep='_')
 both_names$number<- rownames(taxa)
 #take out asv table and rename that too
 asvfull<- otu_table(filt_rare_rep2)
-rownames(asvfull)<- paste('ASV', seq(1,17901,1), sep='_')
+rownames(asvfull)<- paste('ASV', seq(1,21724,1), sep='_')
 #convert them into matrix to put back into phyloseq
 tax<- tax_table(as.matrix(taxa))
 otu<- otu_table(as.matrix(asvfull), taxa_are_rows = T)
 sample<- sample_data(filt_rare_rep2)
 #rename the tree tips too
-tree$tip.label<- paste('ASV', seq(1,17901,1), sep='_')
+tree$tip.label<- paste('ASV', seq(1,21724,1), sep='_')
 
 #put all this back into phyloseq so ASVs now have a normal number name
 rep2_named_phy<- phyloseq(otu, tax, sample, tree)
@@ -862,7 +863,7 @@ permanova_wet<- adonis2(distance(filt_rare_wet2, method='wunifrac')~treatment*so
 permanova_wet
 
 #pairwise permanova to see which groups are different from each other
-permanova_pairwise(distance(filt_rare_wet2, method='wunifrac'), grp=metadata_wetF$trt_soilAge)
+permanova_pairwise(distance(filt_rare_wet2, method='wunifrac'), grp=metadata_wetF$trt_soilAge, padj='holm')
 
 # see Plots_18S file for code to make plots
 
@@ -874,7 +875,7 @@ permanova_rgm<- adonis2(distance(filt_rare_RGM2, method='wunifrac')~treatment*`m
 permanova_rgm
 
 #pairwise permanova to see which groups are different
-permanova_pairwise(distance(filt_rare_RGM2, method='wunifrac'), grp=metadata_RGMF$trt_month)
+permanova_pairwise(distance(filt_rare_RGM2, method='wunifrac'), grp=metadata_RGMF$trt_month, padj='holm')
 
 ### see Plots_18S file for code on how to make the plots
 
@@ -1264,182 +1265,14 @@ unique(ind_taxaC_Wrgm[!ind_taxaC_Wrgm$Family %in% ind_taxaC_dry$Family,5])
 
 
 # Differential Abundance----
-## RGM Latrine by season ----
+## Wet RGM Latrine vs Control DA----
 
 RGM2_phy_ASV<- filt_rare_rep2 %>% 
   subset_samples(soilAge %in% ('rgm'))
 
 
-
-#order samples
-sampR<- sample_data(RGM2_phy_ASV) #pull out data from phyloseq
-
-metadata_RGMF<-metadata_RGMF[order(match(metadata_RGMF$`SampleID`, row.names(sampR))), ]
-
-#make season a factor
-rgm2_sampdata<- sample_data(RGM2_phy_ASV)
-rgm2_sampdata$month.collected<- as.factor(rgm2_sampdata$month.collected)
-RGM2_phy_ASV@sam_data<- rgm2_sampdata
-str(RGM2_phy_ASV@sam_data)
-
-#filter out just latrines for both replicates
-rgmL_rep2_phy<- subset_samples(RGM2_phy_ASV, treatment=='latrine')
-
-#find latrines that were only sampled in 1 season to filter them out
-samp2<-metadata_RGMF %>% 
-  filter(treatment=='latrine') %>% 
-  group_by(latrine_trt) %>% 
-  summarize(freq=n()) %>% 
-  filter(freq == 2) %>% 
-  dplyr::select(latrine_trt) %>% 
-  as.list() 
-
-#if this doesn't work because plyr is masking, try: 
-#samp2 <- metadata_RGMF %>%
-#  dplyr::filter(treatment == 'latrine') %>%
-#  dplyr::group_by(latrine_trt) %>%
-#  dplyr::summarize(freq = dplyr::n(), .groups = 'drop') %>%
-#  dplyr::filter(freq == 2) %>%
-#  dplyr::pull(latrine_trt)
-
-summary(samp2)
-#if this doesn't contain anything, rerun: 
-#metadata_RGMF<- metadata_factored %>% 
-#filter(soilAge=='rgm', replicate==2) 
-
-#filter the phyloseq to keep the latrines that were sampled in both seasons
-rgmL_rep2_phy<- subset_samples(rgmL_rep2_phy, latrine_trt %in% samp2)
-
-#model with just rep 2, no RE
-rgmLSeason_noRE<-ancombc2(data = rgmL_rep2_phy, tax_level = "Genus",
-                          fix_formula = "month.collected", rand_formula =NULL,
-                          p_adj_method = "BH", pseudo_sens = TRUE,
-                          prv_cut = 0.10, lib_cut = 0, s0_perc = 0.05,
-                          group = "month.collected", struc_zero = TRUE, neg_lb = TRUE,
-                          alpha = 0.05, n_cl = 2, verbose = TRUE,
-                          global = F, pairwise = F, dunnet = F, trend = F,
-                          iter_control = list(tol = 1e-2, max_iter = 20, 
-                                              verbose = TRUE),
-                          em_control = list(tol = 1e-5, max_iter = 100),
-                          lme_control = lme4::lmerControl(),
-                          mdfdr_control = list(fwer_ctrl_method = "holm", B = 100))
-
-#put primary results in data frame
-rgmLSeason_prim<-rgmLSeason_noRE$res
-
-#save it as an rds file
-saveRDS(rgmLSeason_prim, file='rgmLSeasonDA_18S')
-rgmLSeason_prim<- readRDS('rgmLSeasonDA_18S')
-
-#filter for what's significant
-rgmLSeasonSig<-rgmLSeason_prim %>% 
-  filter(q_month.collectedwet<.05 & passed_ss_month.collectedwet==T)
-
-#extract taxa from phyloseq
-rgmL_rep2_taxa<- data.frame(tax_table(rgmL_rep2_phy))
-
-#examine structural zeros
-rgmLSea_zero<- rgmLSeason_noRE$zero_ind
-
-rgmLSea_zeroWet<- rgmLSea_zero %>% 
-  filter(`structural_zero (month.collected = wet)`==T & `structural_zero (month.collected = dry)`==F)
-
-rgmLSea_zeroDry<- rgmLSea_zero %>% 
-  filter(`structural_zero (month.collected = wet)`==F & `structural_zero (month.collected = dry)`==T)
-
-
-
-# Plot log fold change
-rgmLSeason_DAplot<- rgmLSeason_prim %>% 
-  filter(q_month.collectedwet<.05 & passed_ss_month.collectedwet==T) %>% 
-  dplyr::arrange(desc(lfc_month.collectedwet)) %>% 
-  dplyr::mutate(direct = ifelse(lfc_month.collectedwet> 0, "Positive LFC", "Negative LFC"))
-
-#make taxon and direction factors
-rgmLSeason_DAplot$taxon<- factor(rgmLSeason_DAplot$taxon, levels=rgmLSeason_DAplot$taxon)
-rgmLSeason_DAplot$direct<- factor(rgmLSeason_DAplot$direct, levels = c("Positive LFC", "Negative LFC"))
-
-
-fig_rgmLSeason = rgmLSeason_DAplot %>%
-  ggplot(aes(x = taxon, y = lfc_month.collectedwet, fill=direct)) + 
-  geom_bar(stat = "identity", width = 0.7, color = "black", 
-           position = position_dodge(width = 0.4)) +
-  geom_errorbar(aes(ymin = lfc_month.collectedwet - se_month.collectedwet, ymax = lfc_month.collectedwet + se_month.collectedwet), 
-                width = 0.2, position = position_dodge(0.05), color = "black") + 
-  labs(x = NULL, y = "Log fold change", 
-       title = "RGM Wet vs Dry Latrine") + 
-  scale_fill_discrete(name = NULL) +
-  scale_color_discrete(name = NULL) +
-  theme_bw() + 
-  theme(plot.title = element_text(hjust = 0.5),
-        panel.grid.minor.y = element_blank(),
-        axis.text.x= element_text(hjust=1, angle=45))
-fig_rgmLSeason
-
-
-## RGM Control by season----
-
-#factor season in metadata
-rgm2_sampdata<- sample_data(RGM2_phy_ASV)
-rgm2_sampdata$month.collected<- as.factor(rgm2_sampdata$month.collected)
-RGM2_phy_ASV@sam_data<- rgm2_sampdata
-
-#filter for controls
-rgmC_rep2_phy<- subset_samples(RGM2_phy_ASV, treatment=='control')
-
-#find latrines that were only sampled in 1 season to filter them out
-samp2<-metadata_RGMF %>% 
-  filter(treatment=='control') %>% 
-  group_by(latrine_trt) %>% 
-  summarize(freq=n()) %>% 
-  filter(freq=='2') %>% 
-  dplyr::select(latrine_trt) %>% 
-  as.list() 
-
-#filter it to keep the controls that were sampled in both seasons
-rgmC_rep2_phy<- subset_samples(rgmC_rep2_phy, latrine_trt %in% samp2$latrine_trt)
-
-#model with just rep 2, no RE
-rgmCSeason_noRE<-ancombc2(data = rgmC_rep2_phy, tax_level = "Genus",
-                          fix_formula = "month.collected", rand_formula =NULL,
-                          p_adj_method = "BH", pseudo_sens = TRUE,
-                          prv_cut = 0.10, lib_cut = 0, s0_perc = 0.05,
-                          group = "month.collected", struc_zero = TRUE, neg_lb = TRUE,
-                          alpha = 0.05, n_cl = 2, verbose = TRUE,
-                          global = F, pairwise = F, dunnet = F, trend = F,
-                          iter_control = list(tol = 1e-2, max_iter = 20, 
-                                              verbose = TRUE),
-                          em_control = list(tol = 1e-5, max_iter = 100),
-                          lme_control = lme4::lmerControl(),
-                          mdfdr_control = list(fwer_ctrl_method = "holm", B = 100))
-
-#put primary results in data frame
-rgmCSeason_prim<-rgmCSeason_noRE$res
-
-#save it as an rds file
-saveRDS(rgmCSeason_prim, file='rgmCSeasonDA_18S')
-rgmCSeason_prim<- readRDS('rgmCSeasonDA_18S')
-
-#filter for what's significant
-rgmCSeasonSig<-rgmCSeason_prim %>% 
-  filter(q_month.collectedwet<.05 & passed_ss_month.collectedwet==T)
-
-#extract taxa from phyloseq
-rgmC_rep2_taxa<- data.frame(tax_table(rgmC_rep2_phy))
-
-#examine structural zeros
-rgmCSea_zero<- rgmCSeason_noRE$zero_ind
-
-rgmCSea_zeroWet<- rgmCSea_zero %>% 
-  filter(`structural_zero (month.collected = dry)`==F & `structural_zero (month.collected = wet)`==T)
-
-rgmCSea_zeroDry<- rgmCSea_zero %>% 
-  filter(`structural_zero (month.collected = dry)`==T & `structural_zero (month.collected = wet)`==F)
-
-
-## Wet RGM Latrine vs Control DA----
-
 #factor treatment
+rgm2_sampdata<- sample_data(RGM2_phy_ASV)
 rgm2_sampdata$treatment<- as.factor(rgm2_sampdata$treatment)
 RGM2_phy_ASV@sam_data<- rgm2_sampdata
 str(RGM2_phy_ASV@sam_data)
@@ -1495,7 +1328,7 @@ fig_rgmWetT = rgmWetT_DAplot %>%
                 width = 0.2, position = position_dodge(0.05), color = "black") + 
   labs(x = NULL, y = "Log fold change", 
        title = "Log fold changes") + 
-  #scale_fill_manual(values=c('purple3', 'cyan3'), name=NULL, labels=c('Positive LFC (more in latrine)','Negative LFC (more in control)'))+
+  scale_fill_manual(values=c('purple3', 'cyan3'), name=NULL, labels=c('Positive LFC (more in latrine)','Negative LFC (more in control)'))+
   scale_color_discrete(name = NULL) +
   theme_bw() + 
   theme(plot.title = element_text(hjust = 0.5),
@@ -1507,7 +1340,7 @@ fig_rgmWetT
 #do the test at the phylum level
 rgmWetTDA_phylum<-ancombc2(data = rgmW_rep2_phy, tax_level = "Phylum",
                            fix_formula = "treatment", rand_formula = NULL,
-                           p_adj_method = "BH", pseudo_sens = TRUE,
+                           p_adj_method = "holm", pseudo_sens = TRUE,
                            prv_cut = 0.10, lib_cut = 0, s0_perc = 0.05,
                            group = "treatment", struc_zero = TRUE, neg_lb = TRUE,
                            alpha = 0.05, n_cl = 2, verbose = TRUE,
@@ -1550,7 +1383,7 @@ fig_rgmWetphylum
 
 ## Dry RGM Latrine vs Control----
 
-#got the phyloseq from the latrine by season step
+#got the phyloseq from the previous step
 
 #make treatment a factor
 rgm2_sampdata$treatment<- as.factor(rgm2_sampdata$treatment)
@@ -1608,7 +1441,7 @@ fig_rgmDryT = rgmDryT_DAplot %>%
                 width = 0.2, position = position_dodge(0.05), color = "black") + 
   labs(x = NULL, y = "Log fold change", 
        title = "Dry Latrine vs Control") + 
-  scale_fill_discrete(name = NULL) +
+  scale_fill_manual(values=c( 'cyan3'), name=NULL, labels=c('Negative LFC (more in control)'))+
   scale_color_discrete(name = NULL) +
   theme_bw() + 
   theme(plot.title = element_text(hjust = 0.5),
@@ -1619,7 +1452,7 @@ fig_rgmDryT
 #do the test at the phylum level
 rgmDryTDA_phylum<-ancombc2(data = rgmD_rep2_phy, tax_level = "Phylum",
                            fix_formula = "treatment", rand_formula = NULL,
-                           p_adj_method = "BH", pseudo_sens = TRUE,
+                           p_adj_method = "holm", pseudo_sens = TRUE,
                            prv_cut = 0.10, lib_cut = 0, s0_perc = 0.05,
                            group = "treatment", struc_zero = TRUE, neg_lb = TRUE,
                            alpha = 0.05, n_cl = 2, verbose = TRUE,
@@ -1641,9 +1474,8 @@ rgmDry_phylumSig<- rgmDry_phylum_prim %>%
 ## LIA vs RGM Control but using only 4 rgm locations that we chose based on location and availability----
 ##51,60,56,58
 #get the phyloseq with regular asv names
-wet2_phy_ASV<- filt_rare_phy%>% 
-  subset_samples(month.collected %in% ('wet')) %>% 
-  subset_samples(replicate==1) 
+wet2_phy_ASV<- filt_rare_rep2 %>% 
+  subset_samples(month.collected=='wet')
 
 ## make our test variables factors
 wet2_sampdata<- sample_data(wet2_phy_ASV)
@@ -1659,7 +1491,7 @@ soilAgeCDAphy<- wet2_phy_ASV %>%
 #run the test
 soilAgeCDA<-ancombc2(data = soilAgeCDAphy, tax_level = "Genus",
                      fix_formula = "soilAge", rand_formula =NULL,
-                     p_adj_method = "BH", pseudo_sens = TRUE,
+                     p_adj_method = "holm", pseudo_sens = TRUE,
                      prv_cut = 0.10, lib_cut = 0, s0_perc = 0.05,
                      group = "soilAge", struc_zero = T, neg_lb = T,
                      alpha = 0.05, n_cl = 2, verbose = TRUE,
@@ -1695,7 +1527,7 @@ LIA_phylum_DA<- wet2_phy_ASV %>%
 #run the test
 soilAgeDAPhylum<-ancombc2(data = LIA_phylum_DA, tax_level = "Phylum",
                           fix_formula = "treatment", rand_formula =NULL,
-                          p_adj_method = "BH", pseudo_sens = TRUE,
+                          p_adj_method = "holm", pseudo_sens = TRUE,
                           prv_cut = 0.10, lib_cut = 0, s0_perc = 0.05,
                           group = "treatment", struc_zero = T, neg_lb = T,
                           alpha = 0.05, n_cl = 2, verbose = TRUE,
