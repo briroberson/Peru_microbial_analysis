@@ -1088,7 +1088,6 @@ dryRGM_betadis_chrono<-betadisper(distance(filt_rare_RGM_dry, method='wunifrac')
 permutest(dryRGM_betadis_chrono)
 boxplot(dryRGM_betadis_chrono)
 
-
 #adonis2(dist(dryRGM_betadis$distances)~metaDryRGM$treatment)
 
 
