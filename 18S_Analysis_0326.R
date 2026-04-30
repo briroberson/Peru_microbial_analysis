@@ -318,7 +318,7 @@ filt_rare_phy<- mirl_phyloseq
 #steps 1b-3e
 
 saveRDS(filt_rare_phy, file="filt_rare_phy_18s.rds") #use whatever file path for where you want to save it
-filt_rare_phy<-readRDS("filt_rare_phy_18s.rds")
+filt_rare_phy_18S<-readRDS("filt_rare_phy_18s.rds")
 
 
 
@@ -454,7 +454,7 @@ metadata_filt<- metadata_filt %>%
   filter(!is.na(Observed))
 
 # all inverse simpson
-all_simpson<- estimate_richness(filt_rare_phy, measures='InvSimpson')
+all_simpson<- estimate_richness(filt_rare_phy_18S, measures='InvSimpson')
 all_simpson$`SampleID`<- row.names(all_simpson)
 
 metadata_filt<- metadata_filt %>% 
