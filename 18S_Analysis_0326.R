@@ -821,8 +821,9 @@ qqnorm(residuals(m_dry_simp))
 
 #make vicuna rai model
 m_dry_simp_rai<- lmer(InvSimpson~treatment*RAI_vicugna+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
-Anova(m_dry_simp_rai, type='III')
 summary(m_dry_simp_rai)
+Anova(m_dry_simp_rai, type='III')
+
 
 #chronosequence model
 m_dry_simp_chrono<- lmer(InvSimpson~treatment*class+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
@@ -840,8 +841,9 @@ qqnorm(residuals(m_dry_pie))
 
 #make vicuna rai model
 m_dry_pie_rai<- lmer(Pielou~treatment*RAI_vicugna+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
-Anova(m_dry_pie_rai, type='III')
 summary(m_dry_pie_rai)
+Anova(m_dry_pie_rai, type='III')
+
 
 #chronosequence model
 m_dry_pie_chrono<- lmer(Pielou~treatment*class+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
