@@ -158,7 +158,7 @@ officer::read_pptx() %>%
 ggplot(metadata_wet, aes(class, Observed)) +
   geom_boxplot(alpha = 0.5, aes(fill=treatment)) + #adds boxplot
   geom_point(size = 3, aes(color=elevation), alpha = .7) + #adds the individual points
-  labs(x = NULL, y = "ASV Richness", title = "a) 16S Alpha Diversity") +
+  labs(x = NULL, y = "ASV Richness", title = "a) 18S Alpha Diversity") +
   scale_fill_manual(values=c('cyan3','purple3'), guide='none')+ #colors the two different treatments
   scale_color_gradient(low='lightgray', high='black')+ #colors elevation so low values are lighter
   theme_bw() +
@@ -176,6 +176,17 @@ ggplot(metadata_wet, aes(treatment, Shannon)) +
   theme_bw() +
   theme+
   facet_wrap(~soilAge)
+
+#chromosequence shannon
+ggplot(metadata_wet, aes(class, Shannon)) +
+  geom_boxplot(alpha = 0.5, aes(fill=treatment)) + #adds boxplot
+  geom_point(size = 3, aes(color=elevation), alpha = .7) + #adds the individual points
+  labs(x = NULL, y = "Shannon's Diversity", title = "a) 18S Alpha Diversity") +
+  scale_fill_manual(values=c('cyan3','purple3'), guide='none')+ #colors the two different treatments
+  scale_color_gradient(low='lightgray', high='black')+ #colors elevation so low values are lighter
+  theme_bw() +
+  theme+
+  facet_wrap(~treatment)
 
 ### Inv Simpson ----
 ggplot(metadata_wet, aes(treatment, InvSimpson)) +

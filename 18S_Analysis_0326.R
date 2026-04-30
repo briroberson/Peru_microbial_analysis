@@ -610,8 +610,9 @@ lrtest(m_wet_shan_div, m_wet_shan_nullI)
 
 #make vicuna rai model
 m_wet_shan_rai<- lmer(Shannon~treatment*RAI_vicugna+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
-Anova(m_wet_shan_rai, type='III')
 summary(m_wet_shan_rai)
+Anova(m_wet_shan_rai, type='III')
+
 
 #chronosequence model
 m_wet_shan_chrono<- lmer(Shannon~treatment*class+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
