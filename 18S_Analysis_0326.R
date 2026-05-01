@@ -58,12 +58,12 @@ metadata<-readr::read_tsv("18sformatted_metadata.tsv")
 waypoints<- read.csv("waypoints.csv")
 #slope and aspect file
 slope_aspect<- read.csv("latrine_geog_info.csv")
-#vicugna RAI
-vicugnaRAI<- read.csv("vicugnaRAI_20260304.csv") #using data downloaded Mar 4 2026. 30 min IE used
+
 #chronosequences
 chrono<- read.csv('soil_chronosequence_points.csv') #using the dual Tang and Seimon method decided April 28 2026
 
-critters<- read.csv("critter_diversity_richness_043026.csv")
+#Vicuna RAI and vertebrate diversity 
+critter<- read.csv("critter_diversity_richness_043026.csv")
 
 ### 1b. Other files, loaded into a phyloseq
 # Load Other Data ----
@@ -456,7 +456,7 @@ metadata_filt<- metadata_filt %>%
   filter(!is.na(Observed))
 
 # all inverse simpson
-all_simpson<- estimate_richness(filt_rare_phy_18S, measures='InvSimpson')
+all_simpson<- estimate_richness(filt_rare_phy_18s, measures='InvSimpson')
 all_simpson$`SampleID`<- row.names(all_simpson)
 
 metadata_filt<- metadata_filt %>% 
@@ -488,23 +488,22 @@ slope_aspect$latrine<- slope_aspect$Latrine
 metadata_filt<- metadata_filt %>% 
   left_join(slope_aspect, by='latrine')
 
+#add critter stuff
+critter$latrine<- critter$X
 
-#add Vicuna RAI 
-vicugnaRAI<- dplyr::select(vicugnaRAI, latrine, RAI_vicugna )
+metadata_crit<- metadata_filt %>% 
+  filter(treatment=='latrine') %>% 
+  dplyr::select(c('latrine','Observed','Shannon','elevation','InvSimpson','Pielou','replicate','latrine_trt_month','month-collected'))
 
-metadata_filt<- metadata_filt %>% 
-  left_join(vicugnaRAI, by='latrine')
+critter_filt<-critter %>% 
+  left_join(metadata_crit, by='latrine')
+
 
 #add chronosequences
 metadata_filt<- metadata_filt %>% 
-  left_join(chrono, by='latrine')
+  full_join(chrono, by='latrine')
 
-#add vertebrate diversity 
-colnames(critters)[1] <- "latrine"
-critters<- dplyr::select(critters, latrine, Shannon.Index, Animal.Richness)
 
-metadata_filt3<- metadata_filt %>% 
-  left_join(critters, by='latrine')
 
 ############ make the things going into the models factors
 ## Wet Subset Models ----
@@ -585,6 +584,9 @@ summary(m_wet_rich_chrono)
 Anova(m_wet_rich_chrono, type='III')
 emmeans(m_wet_rich_chrono, pairwise~treatment*class)
 qqnorm(residuals(m_wet_rich_chrono))
+#export results 
+export<-emmeans(m_wet_rich_chrono, pairwise~treatment*class)
+write.csv(export$contrasts, "18SwetChronoRichnessPairwise.csv", row.names = FALSE)
 
 #see plots for regressions / boxplots 
 
@@ -774,7 +776,7 @@ metaDryRGM_both<- metadata_filt %>%
   filter(soilAge=='rgm' & `month-collected`=='dry')
 
 metaDryRGM_both<-metaDryRGM_both %>% 
-  mutate(treatment=as.factor(treatment), `month-collected`=as.factor(`month-collected`), class=as.factor(class)) %>% 
+  mutate(treatment=as.factor(treatment), `month-collected`=as.factor(`month-collected`), class=factor(class, levels=c('LIA', 'LIA-1931','1931-1962','1984-2024'))) %>% 
   mutate(elevation_sc=scale(elevation))
 
 #richness
@@ -799,6 +801,10 @@ Anova(m_dry_rich_chrono, type='III')
 emmeans(m_dry_rich_chrono, pairwise~treatment*class)
 qqnorm(residuals(m_dry_rich_chrono))
 
+#to export results 
+export<-emmeans(m_dry_rich_chrono, pairwise~treatment*class)
+write.csv(export$contrasts, "18SdryChronoRichnessPairwise.csv", row.names = FALSE)
+
 
 
 #Shannon
@@ -819,6 +825,9 @@ summary(m_dry_shan_chrono)
 Anova(m_dry_shan_chrono, type='III')
 emmeans(m_dry_shan_chrono, pairwise~treatment*class)
 qqnorm(residuals(m_dry_shan_chrono))
+
+
+
 
 #Inv Simpson
 m_dry_simp<- lmer(InvSimpson~treatment*elevation_sc+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
