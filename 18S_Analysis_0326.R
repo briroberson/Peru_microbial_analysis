@@ -63,6 +63,8 @@ vicugnaRAI<- read.csv("vicugnaRAI_20260304.csv") #using data downloaded Mar 4 20
 #chronosequences
 chrono<- read.csv('soil_chronosequence_points.csv') #using the dual Tang and Seimon method decided April 28 2026
 
+critters<- read.csv("critter_diversity_richness_043026.csv")
+
 ### 1b. Other files, loaded into a phyloseq
 # Load Other Data ----
 
@@ -497,7 +499,12 @@ metadata_filt<- metadata_filt %>%
 metadata_filt<- metadata_filt %>% 
   left_join(chrono, by='latrine')
 
+#add vertebrate diversity 
+colnames(critters)[1] <- "latrine"
+critters<- dplyr::select(critters, latrine, Shannon.Index, Animal.Richness)
 
+metadata_filt3<- metadata_filt %>% 
+  left_join(critters, by='latrine')
 
 ############ make the things going into the models factors
 ## Wet Subset Models ----
