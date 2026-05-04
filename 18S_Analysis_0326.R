@@ -516,6 +516,9 @@ metadata_filt<- metadata_filt %>%
 # Wet season metadata
 metadata_wet<- metadata_filt %>% 
   filter(`month-collected`=='wet')
+critter_wet<- critter_data %>% 
+  filter(month.collected=='wet')
+
 
 #factor the variables in the models and scale elevation
 metadata_wet<-metadata_wet %>% 
@@ -527,7 +530,7 @@ names(metadata_wet)
 Wel_mean<-mean(metadata_wet$elevation)
 Wel_sd<-sd(metadata_wet$elevation)
 #to calculate an elevation's value on the scaled scale, subtract the mean and divide by the sd
-# (5100-Wel_mean)/Wel_sd
+# (5111-Wel_mean)/Wel_sd
 
 #to filter into LIA and RGM 
 metadata_wet_LIA <- metadata_wet %>%
@@ -576,11 +579,6 @@ lrtest(m_wet_richNB, m_wet_rich_nullS) #if p value is sig, then the regular mode
 m_wet_rich_nullI<- glmer.nb(Observed~treatment*elevation_ref+soilAge+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
 lrtest(m_wet_richNB, m_wet_rich_nullI)
 
-#make vicuna rai model
-m_wet_rich_rai<- lmer(Observed~treatment*RAI_vicugna+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
-summary(m_wet_rich_rai)
-Anova(m_wet_rich_rai, type='III')
-
 
 #chronosequence model
 m_wet_rich_chrono<- lmer(Observed~treatment*class+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
@@ -591,6 +589,25 @@ qqnorm(residuals(m_wet_rich_chrono))
 #export results 
 export<-emmeans(m_wet_rich_chrono, pairwise~treatment*class)
 write.csv(export$contrasts, "18SwetChronoRichnessPairwise.csv", row.names = FALSE)
+
+#vicuna RAI
+m_wet_vrai<- lmer(Observed~Vicuna.RAI*elevation_sc+(1|latrine_trt_month), data=critter_wet)
+summary(m_wet_vrai)
+Anova(m_wet_vrai, type='III')
+qqnorm(residuals(m_wet_vrai))
+
+#all vert richness
+m_wet_vertrich_rich<- lmer(Observed~Animal.Richness*elevation_sc+(1|latrine_trt_month), data=critter_wet)
+summary(m_wet_vertrich_rich)
+Anova(m_wet_vertrich_rich, type='III')
+qqnorm(residuals(m_wet_vertrich_rich))
+
+#all vert shannon
+m_wet_vertshan_rich<- lmer(Observed~Shannon.Index*elevation_sc+(1|latrine_trt_month), data=critter_wet)
+summary(m_wet_vertshan_rich)
+Anova(m_wet_vertshan_rich, type='III')
+qqnorm(residuals(m_wet_vertshan_rich))
+
 
 #see plots for regressions / boxplots 
 
@@ -620,13 +637,6 @@ lrtest(m_wet_shan_div, m_wet_shan_nullS)
 m_wet_shan_nullI<- lmer(Shannon~treatment*elevation_sc+soilAge+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
 lrtest(m_wet_shan_div, m_wet_shan_nullI)
 
-
-#make vicuna rai model
-m_wet_shan_rai<- lmer(Shannon~treatment*RAI_vicugna+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
-summary(m_wet_shan_rai)
-Anova(m_wet_shan_rai, type='III')
-
-
 #chronosequence model
 m_wet_shan_chrono<- lmer(Shannon~treatment*class+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
 summary(m_wet_shan_chrono)
@@ -634,6 +644,23 @@ Anova(m_wet_shan_chrono, type='III')
 emmeans(m_wet_shan_chrono, pairwise~treatment*class)
 qqnorm(residuals(m_wet_shan_chrono))
 
+#vicuna RAI
+m_wet_vrai_shan<- lmer(Shannon~Vicuna.RAI*elevation_sc+(1|latrine_trt_month), data=critter_wet)
+summary(m_wet_vrai_shan)
+Anova(m_wet_vrai_shan, type='III')
+qqnorm(residuals(m_wet_vrai_shan))
+
+#all vert richness
+m_wet_vertrich_shan<- lmer(Shannon~Animal.Richness*elevation_sc+(1|latrine_trt_month), data=critter_wet)
+summary(m_wet_vertrich_shan)
+Anova(m_wet_vertrich_shan, type='III')
+qqnorm(residuals(m_wet_vertrich_shan))
+
+#all vert shannon
+m_wet_vertshan_shan<- lmer(Shannon~Shannon.Index*elevation_sc+(1|latrine_trt_month), data=critter_wet)
+summary(m_wet_vertshan_shan)
+Anova(m_wet_vertshan_shan, type='III')
+qqnorm(residuals(m_wet_vertshan_shan))
 
 
 ### Inv Simpson's Diversity ----
@@ -654,11 +681,6 @@ lrtest(m_wet_simp, m_wet_simp_nullS)
 m_wet_simp_nullI<- lmer(InvSimpson~treatment*elevation_sc+soilAge+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
 lrtest(m_wet_simp, m_wet_simp_nullI)
 
-#make vicuna rai model
-m_wet_simp_rai<- lmer(InvSimpson~treatment*RAI_vicugna+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
-summary(m_wet_simp_rai)
-Anova(m_wet_simp_rai, type='III')
-
 
 #chronosequence model
 m_wet_simp_chrono<- lmer(InvSimpson~treatment*class+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
@@ -666,6 +688,24 @@ summary(m_wet_simp_chrono)
 Anova(m_wet_simp_chrono, type='III')
 emmeans(m_wet_simp_chrono, pairwise~treatment*class)
 qqnorm(residuals(m_wet_simp_chrono))
+
+#vicuna RAI
+m_wet_vrai_simp<- lmer(InvSimpson~Vicuna.RAI*elevation_sc+(1|latrine_trt_month), data=critter_wet)
+summary(m_wet_vrai_simp)
+Anova(m_wet_vrai_simp, type='III')
+qqnorm(residuals(m_wet_vrai_simp))
+
+#all vert richness
+m_wet_vertrich_simp<- lmer(InvSimpson~Animal.Richness*elevation_sc+(1|latrine_trt_month), data=critter_wet)
+summary(m_wet_vertrich_simp)
+Anova(m_wet_vertrich_simp, type='III')
+qqnorm(residuals(m_wet_vertrich_simp))
+
+#all vert shannon
+m_wet_vertshan_simp<- lmer(InvSimpson~Shannon.Index*elevation_sc+(1|latrine_trt_month), data=critter_wet)
+summary(m_wet_vertshan_simp)
+Anova(m_wet_vertshan_simp, type='III')
+qqnorm(residuals(m_wet_vertshan_simp))
 
 
 
@@ -677,11 +717,6 @@ Anova(m_wet_pie, type='III')
 qqnorm(residuals(m_wet_pie))
 emmeans(m_wet_pie, pairwise~treatment*soilAge)
 
-#make vicuna rai model
-m_wet_pie_rai<- lmer(Pielou~treatment*RAI_vicugna+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
-summary(m_wet_pie_rai)
-Anova(m_wet_pie_rai, type='III')
-
 
 #chronosequence model
 m_wet_pie_chrono<- lmer(Pielou~treatment*class+(1|latrine_trt_month)+(1|latrine), data=metadata_wet)
@@ -689,6 +724,25 @@ summary(m_wet_pie_chrono)
 Anova(m_wet_pie_chrono, type='III')
 emmeans(m_wet_pie_chrono, pairwise~treatment*class)
 qqnorm(residuals(m_wet_pie_chrono))
+
+#vicuna RAI
+m_wet_vrai_pie<- lmer(Pielou~Vicuna.RAI*elevation_sc+(1|latrine_trt_month), data=critter_wet)
+summary(m_wet_vrai_pie)
+Anova(m_wet_vrai_pie, type='III')
+qqnorm(residuals(m_wet_vrai_pie))
+
+#all vert richness
+m_wet_vertrich_pie<- lmer(Pielou~Animal.Richness*elevation_sc+(1|latrine_trt_month), data=critter_wet)
+summary(m_wet_vertrich_pie)
+Anova(m_wet_vertrich_pie, type='III')
+qqnorm(residuals(m_wet_vertrich_pie))
+
+#all vert shannon
+m_wet_vertshan_pie<- lmer(Pielou~Shannon.Index*elevation_sc+(1|latrine_trt_month), data=critter_wet)
+summary(m_wet_vertshan_pie)
+Anova(m_wet_vertshan_pie, type='III')
+qqnorm(residuals(m_wet_vertshan_pie))
+
 
 
 
@@ -783,16 +837,14 @@ metaDryRGM_both<-metaDryRGM_both %>%
   mutate(treatment=as.factor(treatment), `month-collected`=as.factor(`month-collected`), class=factor(class, levels=c('LIA', 'LIA-1931','1931-1962','1984-2024'))) %>% 
   mutate(elevation_sc=scale(elevation))
 
+critter_dry<- critter_data %>% 
+  filter(month.collected=='dry')
+
 #richness
 m_dry_rich<- lmer(Observed~treatment*elevation_sc+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
 summary(m_dry_rich)
 Anova(m_dry_rich, type='III')
 qqnorm(residuals(m_dry_rich))
-
-#make vicuna rai model
-m_dry_rich_rai<- lmer(Observed~treatment*RAI_vicugna+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
-summary(m_dry_rich_rai)
-Anova(m_dry_rich_rai, type='III')
 
 
 ggplot(metaDryRGM_both, aes(x=RAI_vicugna, y=Observed))+
@@ -809,6 +861,25 @@ qqnorm(residuals(m_dry_rich_chrono))
 export<-emmeans(m_dry_rich_chrono, pairwise~treatment*class)
 write.csv(export$contrasts, "18SdryChronoRichnessPairwise.csv", row.names = FALSE)
 
+#vicuna RAI
+m_dry_vrai_rich<- lmer(Observed~Vicuna.RAI*elevation_sc+(1|latrine_trt_month), data=critter_dry)
+summary(m_dry_vrai_rich)
+Anova(m_dry_vrai_rich, type='III')
+qqnorm(residuals(m_dry_vrai_rich))
+
+#all vert richness
+m_dry_vertrich_rich<- lmer(Observed~Animal.Richness*elevation_sc+(1|latrine_trt_month), data=critter_dry)
+summary(m_dry_vertrich_rich)
+Anova(m_dry_vertrich_rich, type='III')
+qqnorm(residuals(m_dry_vertrich_rich))
+
+#all vert shannon
+m_dry_vertshan_rich<- lmer(Observed~Shannon.Index*elevation_sc+(1|latrine_trt_month), data=critter_dry)
+summary(m_dry_vertshan_rich)
+Anova(m_dry_vertshan_rich, type='III')
+qqnorm(residuals(m_dry_vertshan_rich))
+
+
 
 
 #Shannon
@@ -817,12 +888,6 @@ summary(m_dry_shan)
 Anova(m_dry_shan)
 qqnorm(residuals(m_dry_shan))
 
-#make vicuna rai model
-m_dry_shan_rai<- lmer(Shannon~treatment*RAI_vicugna+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
-summary(m_dry_shan_rai)
-Anova(m_dry_shan_rai, type='III')
-
-
 #chronosequence model
 m_dry_shan_chrono<- lmer(Shannon~treatment*class+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
 summary(m_dry_shan_chrono)
@@ -830,6 +895,23 @@ Anova(m_dry_shan_chrono, type='III')
 emmeans(m_dry_shan_chrono, pairwise~treatment*class)
 qqnorm(residuals(m_dry_shan_chrono))
 
+#vicuna RAI
+m_dry_vrai_shan<- lmer(Shannon~Vicuna.RAI*elevation_sc+(1|latrine_trt_month), data=critter_dry)
+summary(m_dry_vrai_shan)
+Anova(m_dry_vrai_shan, type='III')
+qqnorm(residuals(m_dry_vrai_shan))
+
+#all vert richness
+m_dry_vertrich_shan<- lmer(Shannon~Animal.Richness*elevation_sc+(1|latrine_trt_month), data=critter_dry)
+summary(m_dry_vertrich_shan)
+Anova(m_dry_vertrich_shan, type='III')
+qqnorm(residuals(m_dry_vertrich_shan))
+
+#all vert shannon
+m_dry_vertshan_shan<- lmer(Shannon~Shannon.Index*elevation_sc+(1|latrine_trt_month), data=critter_dry)
+summary(m_dry_vertshan_shan)
+Anova(m_dry_vertshan_shan, type='III')
+qqnorm(residuals(m_dry_vertshan_shan))
 
 
 
@@ -839,18 +921,32 @@ summary(m_dry_simp)
 Anova(m_dry_simp)
 qqnorm(residuals(m_dry_simp))
 
-#make vicuna rai model
-m_dry_simp_rai<- lmer(InvSimpson~treatment*RAI_vicugna+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
-summary(m_dry_simp_rai)
-Anova(m_dry_simp_rai, type='III')
-
-
 #chronosequence model
 m_dry_simp_chrono<- lmer(InvSimpson~treatment*class+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
 summary(m_dry_simp_chrono)
 Anova(m_dry_simp_chrono, type='III')
 emmeans(m_dry_simp_chrono, pairwise~treatment*class)
 qqnorm(residuals(m_dry_simp_chrono))
+
+#vicuna RAI
+m_dry_vrai_simp<- lmer(InvSimpson~Vicuna.RAI*elevation_sc+(1|latrine_trt_month), data=critter_dry)
+summary(m_dry_vrai_simp)
+Anova(m_dry_vrai_simp, type='III')
+qqnorm(residuals(m_dry_vrai_simp))
+
+#all vert richness
+m_dry_vertrich_simp<- lmer(InvSimpson~Animal.Richness*elevation_sc+(1|latrine_trt_month), data=critter_dry)
+summary(m_dry_vertrich_simp)
+Anova(m_dry_vertrich_simp, type='III')
+qqnorm(residuals(m_dry_vertrich_simp))
+
+#all vert shannon
+m_dry_vertshan_simp<- lmer(InvSimpson~Shannon.Index*elevation_sc+(1|latrine_trt_month), data=critter_dry)
+summary(m_dry_vertshan_simp)
+Anova(m_dry_vertshan_simp, type='III')
+qqnorm(residuals(m_dry_vertshan_simp))
+
+
 
 # Pielou evenness 
 #logit transform Pielou to use a linear model with it
@@ -859,11 +955,6 @@ summary(m_dry_pie)
 Anova(m_dry_pie, type='III')
 qqnorm(residuals(m_dry_pie))
 
-#make vicuna rai model
-m_dry_pie_rai<- lmer(Pielou~treatment*RAI_vicugna+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
-summary(m_dry_pie_rai)
-Anova(m_dry_pie_rai, type='III')
-
 
 #chronosequence model
 m_dry_pie_chrono<- lmer(Pielou~treatment*class+(1|latrine_trt_month)+(1|latrine), data=metaDryRGM_both)
@@ -871,6 +962,24 @@ summary(m_dry_pie_chrono)
 Anova(m_dry_pie_chrono, type='III')
 emmeans(m_dry_pie_chrono, pairwise~treatment*class)
 qqnorm(residuals(m_dry_pie_chrono))
+
+#vicuna RAI
+m_dry_vrai_pie<- lmer(Pielou~Vicuna.RAI*elevation_sc+(1|latrine_trt_month), data=critter_dry)
+summary(m_dry_vrai_pie)
+Anova(m_dry_vrai_pie, type='III')
+qqnorm(residuals(m_dry_vrai_pie))
+
+#all vert richness
+m_dry_vertrich_pie<- lmer(Pielou~Animal.Richness*elevation_sc+(1|latrine_trt_month), data=critter_dry)
+summary(m_dry_vertrich_pie)
+Anova(m_dry_vertrich_pie, type='III')
+qqnorm(residuals(m_dry_vertrich_pie))
+
+#all vert shannon
+m_dry_vertshan_pie<- lmer(Pielou~Shannon.Index*elevation_sc+(1|latrine_trt_month), data=critter_dry)
+summary(m_dry_vertshan_pie)
+Anova(m_dry_vertshan_pie, type='III')
+qqnorm(residuals(m_dry_vertshan_pie))
 
 
 
