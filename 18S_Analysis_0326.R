@@ -499,10 +499,14 @@ critter_filt<-critter %>%
   left_join(metadata_crit, by='latrine')
 
 
+#export as csv to finish combining data 
+write.csv(critter_filt, file='critter_data.csv')
+critter_data<- read.csv('critter_data.csv')
+critter_data$elevation_sc<- scale(critter_data$elevation)
+
 #add chronosequences
 metadata_filt<- metadata_filt %>% 
   full_join(chrono, by='latrine')
-
 
 
 ############ make the things going into the models factors
