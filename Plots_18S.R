@@ -1220,35 +1220,298 @@ plot_ts_heatmap(Phy_relabRt, metaDryRGM, 0.01, "latrine_trt",colors=c('#fcfdbf',
   labs(title='RGM Dry')
 
 
-## stacked bar----
-#LIA using phylum
-#make taxa a row
-Phy_relabLt$taxa<- row.names(Phy_relabLt)
-#make long format
-Phy_relabLtlong<- pivot_longer(Phy_relabLt, names_to='sample', cols=1:8)
+###########RGM dry----
+#add control/latrine data to relative abundance matrix
+dry_trt<-metaDryRGM$treatment
+Phy_relabR$treatment<- dry_trt
 
-#plot it
-ggplot(Phy_relabLtlong, aes(fill=taxa, y=value, x=sample)) + 
-  +     geom_bar(position="fill", stat="identity")
+#recode treatment to be a number
+Phy_relabR$trt_num<- ifelse(Phy_relabR$treatment=='latrine', 1, 0)
+Phy_relabR<- Phy_relabR %>% 
+  select(-treatment)
 
-#RGM Wet
-Phy_relabWt$taxa<- row.names(Phy_relabWt)
-#make long format
-Phy_relabWtlong<- pivot_longer(Phy_relabWt, names_to='sample', cols=1:38)
-
-#plot it
-ggplot(Phy_relabWtlong, aes(fill=taxa, y=value, x=sample)) + 
-       geom_bar(position="fill", stat="identity")
+#select just control sites and average the Phyla relative abundances
+dryC_avgab <- Phy_relabR %>% 
+  filter(trt_num == 0) %>% 
+  select(-trt_num) %>% #remove trt_num column 
+  colMeans() %>% 
+  data.frame() * 100 #multiply by 100 for percent
 
 
+#select just latrine sites and average the Phyla relative abundances
+dryL_avgab <- Phy_relabR %>% 
+  filter(trt_num == 1) %>% 
+  select(-trt_num) %>% 
+  colMeans() %>% 
+  data.frame() * 100
 
-#RGM dry
-Phy_relabRt$taxa<- row.names(Phy_relabRt)
-#make long format
-Phy_relabRtlong<- pivot_longer(Phy_relabRt, names_to='sample', cols=1:24)
+#join them together
+colnames(dryC_avgab) <- "control_ab"
+colnames(dryL_avgab) <- "latrine_ab"
+dry_avgab<- merge(dryC_avgab, dryL_avgab, by='row.names')
+dry_avgab <- dry_avgab %>% 
+  dplyr::rename(Phylum = Row.names)
+names(dry_avgab) #good 
 
-#plot it
-ggplot(Phy_relabRtlong, aes(fill=taxa, y=value, x=sample)) + 
-  geom_bar(position="fill", stat="identity")
+###group things <1% separately for latrines and controls
+low_dryC_Phy<-dry_avgab %>% 
+  filter(control_ab<1) %>% 
+  select(Phylum)
+
+low_dryL_Phy<-dry_avgab %>% 
+  filter(latrine_ab<1) %>% 
+  select(Phylum)
+
+#view phylum names 
+unique(dry_avgab$Phylum)
+
+#make a variable so anything <1% is a 1 and all other phyla have a unique number
+#but do it separately for latrines and controls. so the Other category is anything not identified (Eukaryota_X)
+# and anything <1% in that specific treatment
+
+stable_order <- sort(unique(dry_avgab$Phylum)) #create an index for assigning phylum ID numbers indpendent of order in dfs 
+
+dry_avgab$phyC <- ifelse(dry_avgab$Phylum %in% low_dryC_Phy$Phylum | dry_avgab$Phylum == "Eukaryota_X", 1, NA)  #group <1 & Euk_x 
+na_idx <- which(is.na(dry_avgab$phyC)) #pull phyla getting unique numbers
+dry_avgab$phyC[na_idx] <- match(dry_avgab$Phylum[na_idx], stable_order) + 1 #assign unique number (starting at 2)
+
+dry_avgab$phyL <- ifelse(dry_avgab$Phylum %in% low_dryL_Phy$Phylum | dry_avgab$Phylum == "Eukaryota_X", 1, NA)
+na_idx2 <- which(is.na(dry_avgab$phyL))
+dry_avgab$phyL[na_idx2] <- match(dry_avgab$Phylum[na_idx2], stable_order) + 1
+
+#calculate abundances within groups separately for latrines and controls, remove Other taxa, and format for plotting 
+dry_final_ab <- dry_avgab %>% 
+  group_by(phyC) %>% 
+  mutate(control_ab_euk = sum(control_ab)) %>% 
+  ungroup() %>% 
+  group_by(phyL) %>% 
+  mutate(latrine_ab_euk = sum(latrine_ab)) %>% 
+  ungroup() %>% 
+  filter(!(phyC == 1 & phyL == 1)) %>% #remove Other taxa 
+  select(control_ab_euk, latrine_ab_euk, Phylum) %>% 
+  pivot_longer(
+    cols = c(control_ab_euk, latrine_ab_euk),
+    names_to = "treatment",
+    values_to = "avg_rel_ab")
+
+#make a soil type column
+dry_final_ab$soil<-'dryRGM'
+
+ggplot(dry_final_ab, aes(x = treatment, y = avg_rel_ab, fill = Phylum)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c(
+    "#bd6553","#cca86a","#bab47b","#beadc7","#a68698",
+    "#c3d9c3","#97b8bf","#7a523b","#b07f15","#1d8c27",
+    "#735a94","#965148","#4b7396","#4d4846","#869187",
+    "#781038"
+  )) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+
+###########RGM wet----
+#add control/latrine data to relative abundance matrix
+wet_trt<-metargmW$treatment #make sure samples are in the same order
+Phy_relabW$treatment<- wet_trt
+
+#recode treatment to be a number
+Phy_relabW$trt_numW<- ifelse(Phy_relabW$treatment=='latrine', 1, 0)
+Phy_relabW<- Phy_relabW %>% 
+  select(-treatment)
+
+#select just control sites and average the Phyla relative abundances
+wetC_avgab <- Phy_relabW %>% 
+  filter(trt_numW == 0) %>% 
+  select(-trt_numW) %>% #remove trt_num column 
+  colMeans() %>% 
+  data.frame() * 100 #multiply by 100 for percent
+
+
+#select just latrine sites and average the Phyla relative abundances
+wetL_avgab <- Phy_relabW %>% 
+  filter(trt_numW == 1) %>% 
+  select(-trt_numW) %>% 
+  colMeans() %>% 
+  data.frame() * 100
+
+#join them together
+colnames(wetC_avgab) <- "control_ab"
+colnames(wetL_avgab) <- "latrine_ab"
+wet_avgab<- merge(wetC_avgab, wetL_avgab, by='row.names')
+wet_avgab <- wet_avgab %>% 
+  dplyr::rename(Phylum = Row.names)
+names(wet_avgab) #good 
+
+###group things <1% separately for latrines and controls
+low_wetC_Phy<-wet_avgab %>% 
+  filter(control_ab<1) %>% 
+  select(Phylum)
+
+low_wetL_Phy<-wet_avgab %>% 
+  filter(latrine_ab<1) %>% 
+  select(Phylum)
+
+#view phylum names 
+unique(wet_avgab$Phylum)
+
+#make a variable so anything <1% is a 1 and all other phyla have a unique number
+#but do it separately for latrines and controls. so the Other category is anything not identified (Eukaryota_X)
+# and anything <1% in that specific treatment
+
+stable_order <- sort(unique(wet_avgab$Phylum)) #create an index for assigning phylum ID numbers indpendent of order in dfs 
+
+wet_avgab$phyC <- ifelse(wet_avgab$Phylum %in% low_wetC_Phy$Phylum | wet_avgab$Phylum == "Eukaryota_X", 1, NA)  #group <1 & Euk_x 
+na_idx <- which(is.na(wet_avgab$phyC)) #pull phyla getting unique numbers
+wet_avgab$phyC[na_idx] <- match(wet_avgab$Phylum[na_idx], stable_order) + 1 #assign unique number (starting at 2)
+
+wet_avgab$phyL <- ifelse(wet_avgab$Phylum %in% low_wetL_Phy$Phylum | wet_avgab$Phylum == "Eukaryota_X", 1, NA)
+na_idx2 <- which(is.na(wet_avgab$phyL))
+wet_avgab$phyL[na_idx2] <- match(wet_avgab$Phylum[na_idx2], stable_order) + 1
+
+#calculate abundances within groups separately for latrines and controls, remove Other taxa, and format for plotting 
+wet_final_ab <- wet_avgab %>% 
+  group_by(phyC) %>% 
+  mutate(control_ab_euk = sum(control_ab)) %>% 
+  ungroup() %>% 
+  group_by(phyL) %>% 
+  mutate(latrine_ab_euk = sum(latrine_ab)) %>% 
+  ungroup() %>% 
+  filter(!(phyC == 1 & phyL == 1)) %>% #remove Other taxa 
+  select(control_ab_euk, latrine_ab_euk, Phylum) %>% 
+  pivot_longer(
+    cols = c(control_ab_euk, latrine_ab_euk),
+    names_to = "treatment",
+    values_to = "avg_rel_ab")
+
+#make a soil type column
+wet_final_ab$soil<-'wetRGM'
+
+ggplot(wet_final_ab, aes(x = treatment, y = avg_rel_ab, fill = Phylum)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c(
+    "#bd6553","#cca86a","#bab47b","#beadc7","#a68698",
+    "#c3d9c3","#97b8bf","#7a523b","#b07f15","#1d8c27",
+    "#735a94","#965148","#4b7396","#4d4846","#869187",
+    "#781038"
+  )) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+
+
+### LIA
+#add control/latrine data to relative abundance matrix
+lia_trt<-metalia$treatment #make sure samples are in the same order
+Phy_relabL$treatment<- lia_trt
+
+#recode treatment to be a number
+Phy_relabL$trt_numL<- ifelse(Phy_relabL$treatment=='latrine', 1, 0)
+Phy_relabL<- Phy_relabL %>% 
+  select(-treatment)
+
+#select just control sites and average the Phyla relative abundances
+liaC_avgab <- Phy_relabL %>% 
+  filter(trt_numL == 0) %>% 
+  select(-trt_numL) %>% #remove trt_num column 
+  colMeans() %>% 
+  data.frame() * 100 #multiply by 100 for percent
+
+
+#select just latrine sites and average the Phyla relative abundances
+liaL_avgab <- Phy_relabL %>% 
+  filter(trt_numL == 1) %>% 
+  select(-trt_numL) %>% 
+  colMeans() %>% 
+  data.frame() * 100
+
+#join them together
+colnames(liaC_avgab) <- "control_ab"
+colnames(liaL_avgab) <- "latrine_ab"
+lia_avgab<- merge(liaC_avgab, liaL_avgab, by='row.names')
+lia_avgab <- lia_avgab %>% 
+  dplyr::rename(Phylum = Row.names)
+names(lia_avgab) #good 
+
+###group things <1% separately for latrines and controls
+low_liaC_Phy<-lia_avgab %>% 
+  filter(control_ab<1) %>% 
+  select(Phylum)
+
+low_liaL_Phy<-lia_avgab %>% 
+  filter(latrine_ab<1) %>% 
+  select(Phylum)
+
+#view phylum names 
+unique(lia_avgab$Phylum)
+
+#make a variable so anything <1% is a 1 and all other phyla have a unique number
+#but do it separately for latrines and controls. so the Other category is anything not identified (Eukaryota_X)
+# and anything <1% in that specific treatment
+
+stable_order <- sort(unique(lia_avgab$Phylum)) #create an index for assigning phylum ID numbers indpendent of order in dfs 
+
+lia_avgab$phyC <- ifelse(lia_avgab$Phylum %in% low_liaC_Phy$Phylum | lia_avgab$Phylum == "Eukaryota_X", 1, NA)  #group <1 & Euk_x 
+na_idx <- which(is.na(lia_avgab$phyC)) #pull phyla getting unique numbers
+lia_avgab$phyC[na_idx] <- match(lia_avgab$Phylum[na_idx], stable_order) + 1 #assign unique number (starting at 2)
+
+lia_avgab$phyL <- ifelse(lia_avgab$Phylum %in% low_liaL_Phy$Phylum | lia_avgab$Phylum == "Eukaryota_X", 1, NA)
+na_idx2 <- which(is.na(lia_avgab$phyL))
+lia_avgab$phyL[na_idx2] <- match(lia_avgab$Phylum[na_idx2], stable_order) + 1
+
+#calculate abundances within groups separately for latrines and controls, remove Other taxa, and format for plotting 
+lia_final_ab <- lia_avgab %>% 
+  group_by(phyC) %>% 
+  mutate(control_ab_euk = sum(control_ab)) %>% 
+  ungroup() %>% 
+  group_by(phyL) %>% 
+  mutate(latrine_ab_euk = sum(latrine_ab)) %>% 
+  ungroup() %>% 
+  filter(!(phyC == 1 & phyL == 1)) %>% #remove Other taxa 
+  select(control_ab_euk, latrine_ab_euk, Phylum) %>% 
+  pivot_longer(
+    cols = c(control_ab_euk, latrine_ab_euk),
+    names_to = "treatment",
+    values_to = "avg_rel_ab")
+
+#make a soil type column
+lia_final_ab$soil<-'lia'
+
+ggplot(lia_final_ab, aes(x = treatment, y = avg_rel_ab, fill = Phylum)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c(
+    "#bd6553","#cca86a","#bab47b","#beadc7","#a68698",
+    "#c3d9c3","#97b8bf","#7a523b","#b07f15","#1d8c27",
+    "#735a94","#965148","#4b7396","#4d4846","#869187",
+    "#781038"
+  )) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+
+###combine all data
+allsoil <- bind_rows(
+  dry_final_ab,
+  wet_final_ab,
+  lia_final_ab)
+
+allsoil$trt_soil<- paste(allsoil$treatment, allsoil$soil, sep='_') #create soil/treatment combo column 
+allsoil$trt_soil <- factor(
+  allsoil$trt_soil,
+  levels = c(
+    "control_ab_euk_lia",
+    "latrine_ab_euk_lia",
+    "control_ab_euk_wetRGM",
+    "latrine_ab_euk_wetRGM",
+    "control_ab_euk_dryRGM",
+    "latrine_ab_euk_dryRGM")) #order 
+
+write.csv(allsoil, '18S_allsoil_taxabar.csv')
+
+ggplot(allsoil, aes(x=trt_soil, y=avg_rel_ab, fill=Phylum ))+
+  geom_bar(stat='identity') +
+  scale_fill_manual(values=c('#bd6553','#cca86a','#bab47b','#beadc7','#a68698',
+                             '#c3d9c3','#97b8bf','#7a523b','#b07f15','#1d8c27',
+                             '#735a94','#965148','#4b7396','#4d4846','#869187',
+                             '#781038'))+
+  scale_x_discrete(labels=c('Control LIA','Latrine LIA','Control Wet RGM','Latrine Wet RGM','Control Dry RGM','Latrine Dry RGM'))+
+  theme(axis.text.x=element_text(angle=60, hjust=1))
+
 
 
